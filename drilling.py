@@ -139,7 +139,7 @@ init_db()
 
 def profit_one_period(q: float, S: float, params: Dict, round_index: int) -> float:
     """Compute private profit for one player in one period given their q and current stock S.
-    Profit = P_eff*q - 0.5*gamma*q^2 - c0*q - c1*(Smax - S)*q - tau*q
+    Profit = P_eff*q - 0.5*gamma*q^2 - c0*q - c1*(Smax - S)*q
     where P_eff can be reduced by a threshold event that might have happened earlier.
     Discounting is applied outside this function when accumulating scores.
     """
@@ -148,10 +148,9 @@ def profit_one_period(q: float, S: float, params: Dict, round_index: int) -> flo
     c0 = params["c0"]
     c1 = params["c1"]
     Smax = params["Smax"]
-    tau = params.get("tax", 0.0)
     # Private profit this period
     rev = P * q - 0.5 * gamma * q * q
-    cost = c0 * q + c1 * (Smax - S) * q + tau * q
+    cost = c0 * q + c1 * (Smax - S) * q
     return rev - cost
 
 
