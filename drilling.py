@@ -689,7 +689,7 @@ def stage_b_multiplayer():
 # ------------------------------
 
 def main():
-    st.title("Groundwater Commons Game — Simplified")
+    st.title("Groundwater Commons Game")
     st.caption("Core tragedy‑of‑the‑commons dynamics: private payoffs vs shared aquifer stock.")
 
     with st.sidebar:
