@@ -690,7 +690,7 @@ def stage_b_multiplayer():
 
 def main():
     st.title("Groundwater Commons Game")
-    st.caption("Core tragedy‑of‑the‑commons dynamics: private payoffs vs shared aquifer stock.")
+    st.caption("You are a farmer pumping groundwater to irrigate your crops. Pumping water lowers the water level, which makes pumping slightly more expensive. Meanwhile, the aquifer naturally replenishes at some rate.")
 
     with st.sidebar:
         st.markdown("### Model in one glance")
