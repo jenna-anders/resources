@@ -1,16 +1,12 @@
-# Groundwater Commons Game (Streamlit) — Simplified Core Version
-# --------------------------------------------------------------
-# Update: Profits are now *front and center* in the player UI.
-# Changes per request:
-#   • The metric box formerly labeled "Aquifer stock S" now shows **This round profit (undiscounted)**.
-#   • The blue info bar has been removed and replaced with a **linear gauge** (no numbers) illustrating aquifer stock.
-#   • Still simplified: no taxes, no thresholds, no caps, no discounting.
-#   • Stages: A (Solo) and B (Multiplayer with rooms).
+# Groundwater Commons Game (Streamlit) — Simplified Core Version (4–5 players)
+# ------------------------------------------------------------------------------
+# Changes in this edit:
+#   • Stage B: "Join as Player" is the default tab (Host is second).
+#   • Auto-end after T=12 rounds (both Solo + Multiplayer).
+#   • Host can create rooms with 4 or 5 players (per-room capacity).
+#   • Default c1 remains 0.006 (as in your version).
 #
-# How to run
-#   1) pip install streamlit
-#   2) Save as streamlit_app.py
-#   3) streamlit run streamlit_app.py
+# Save as streamlit_app.py (or your filename) and run: streamlit run streamlit_app.py
 
 from __future__ import annotations
 import streamlit as st
@@ -41,7 +37,8 @@ st.markdown(
 )
 
 DB_PATH = "commons_game.db"
-N_WELLS = 4  # Each player controls one well in Stage B; solo owns all 4
+SOLO_WELLS = 4              # Solo: player owns 4 wells
+DEFAULT_ROOM_CAPACITY = 4   # Stage B default; host can pick 4 or 5 per room
 
 # ------------------------------
 # SQLite helpers (multiplayer coordination)
@@ -120,10 +117,6 @@ init_db()
 def profit_one_period(q: float, S: float, params: Dict) -> float:
     """Private profit for one player in one period.
     π(q, S) = P·q − ½γ q² − c0·q − c1·(Smax − S)·q
-    - P: output price / value of water
-    - γ: curvature (diminishing returns)
-    - c0: base pumping cost
-    - c1·(Smax − S): depth/energy cost that increases as stock falls
     """
     P = params["P"]
     gamma = params["gamma"]
@@ -140,7 +133,7 @@ def next_stock(S: float, R: float, q_total: float) -> float:
     return max(0.0, S + R - q_total)
 
 # ------------------------------
-# Multiplayer (Stage B) data accessors
+# Multiplayer (Stage B) helpers
 # ------------------------------
 
 def room_exists(code: str) -> bool:
@@ -150,14 +143,27 @@ def room_exists(code: str) -> bool:
         return cur.fetchone() is not None
 
 
+def get_room_capacity(code: str) -> int:
+    """Read per-room capacity (4 or 5) from room state."""
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT state_json FROM rooms WHERE code=?", (code,))
+        row = cur.fetchone()
+        if not row:
+            return DEFAULT_ROOM_CAPACITY
+        state = json.loads(row[0])
+        return int(state.get("players_expected", DEFAULT_ROOM_CAPACITY))
+
+
 def create_room(params: Dict) -> str:
     """Create a new room with initial round 0 row."""
     code = "".join(random.choices(string.ascii_uppercase + string.digits, k=5))
     now = datetime.utcnow().isoformat()
+    capacity = int(params.get("players_expected", DEFAULT_ROOM_CAPACITY))
     state = {
         "status": "lobby",  # lobby -> running -> finished
         "current_round": 0,
-        "players_expected": N_WELLS,
+        "players_expected": capacity,
     }
     with get_conn() as conn:
         cur = conn.cursor()
@@ -220,7 +226,7 @@ def list_players(code: str) -> List[Dict]:
 
 
 def add_or_get_player(code: str, name: str) -> Dict:
-    """Join a room; if name already exists, reuse it; else allocate next well index."""
+    """Join a room; if name already exists, reuse it; else allocate next well index within capacity."""
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(
@@ -231,9 +237,10 @@ def add_or_get_player(code: str, name: str) -> Dict:
         if row:
             pid, win, cum = row[0], row[1], row[2]
         else:
+            capacity = get_room_capacity(code)
             cur.execute("SELECT well_index FROM players WHERE room_code=?", (code,))
             taken = {r[0] for r in cur.fetchall()}
-            available = [i for i in range(N_WELLS) if i not in taken]
+            available = [i for i in range(capacity) if i not in taken]
             if not available:
                 raise ValueError("Room is full")
             win = min(available)
@@ -323,12 +330,13 @@ def maybe_advance_round(code: str):
     R_t = params["R"]
 
     players = list_players(code)
-    n_players = min(len(players), N_WELLS)
+    capacity = get_room_capacity(code)
+    n_players = min(len(players), capacity)
     if n_players == 0:
         return
 
     acts = fetch_actions(code, t)
-    joined_ids = {p["player_id"] for p in players[:N_WELLS]}
+    joined_ids = {p["player_id"] for p in players[:capacity]}
     submitted = [a for a in acts if a["player_id"] in joined_ids and a["submitted"]]
     if len(submitted) < n_players:
         return  # wait for all
@@ -339,7 +347,7 @@ def maybe_advance_round(code: str):
 
     # Per-player profits at S_t
     per_player_profit = {}
-    for p in players[:N_WELLS]:
+    for p in players[:capacity]:
         pid = p["player_id"]
         q_i = q_map.get(pid, 0.0)
         pi_i = profit_one_period(q_i, S_t, params)
@@ -392,7 +400,7 @@ def stock_gauge(S: float, Smax: float, label: str = "Aquifer stock"):
 
 
 def room_params_form(defaults: Dict) -> Dict:
-    """Host's parameter form with only essential knobs."""
+    """Host's parameter form with only essential knobs, plus capacity (4 or 5)."""
     with st.form("room_params_form"):
         col1, col2, col3 = st.columns(3)
         with col1:
@@ -402,6 +410,7 @@ def room_params_form(defaults: Dict) -> Dict:
         with col2:
             qmax = st.number_input("Max q per player", min_value=0.0, value=float(defaults["qmax"]))
             P = st.number_input("Price P", min_value=0.0, value=float(defaults["P"]))
+            players_expected = st.selectbox("Players per room", [4, 5], index=0)
         with col3:
             gamma = st.number_input("Diminishing returns γ", min_value=0.0, value=float(defaults["gamma"]))
             c0 = st.number_input("Base pumping cost c0", min_value=0.0, value=float(defaults["c0"]))
@@ -411,6 +420,7 @@ def room_params_form(defaults: Dict) -> Dict:
         return {
             "S0": float(S0), "Smax": float(S0), "R": float(R), "T": int(T), "qmax": float(qmax),
             "P": float(P), "gamma": float(gamma), "c0": float(c0), "c1": float(c1),
+            "players_expected": int(players_expected),
         }
     return {}
 
@@ -432,16 +442,16 @@ def stage_a_solo():
         s1, s2, s3, s4 = st.columns(4)
         with s1:
             S0 = st.number_input("S0", min_value=0.0, value=defaults["S0"])  # also Smax
-            R = st.number_input("R", min_value=0.0, value=defaults["R"]) 
+            R = st.number_input("R", min_value=0.0, value=defaults["R"])
         with s2:
-            T = st.number_input("T rounds", min_value=1, step=1, value=defaults["T"]) 
-            qmax = st.number_input("Max q (per well)", min_value=0.0, value=defaults["qmax"]) 
+            T = st.number_input("T rounds", min_value=1, step=1, value=defaults["T"])
+            qmax = st.number_input("Max q (per well)", min_value=0.0, value=defaults["qmax"])
         with s3:
-            P = st.number_input("P", min_value=0.0, value=defaults["P"]) 
-            gamma = st.number_input("γ", min_value=0.0, value=defaults["gamma"]) 
+            P = st.number_input("P", min_value=0.0, value=defaults["P"])
+            gamma = st.number_input("γ", min_value=0.0, value=defaults["gamma"])
         with s4:
-            c0 = st.number_input("c0", min_value=0.0, value=defaults["c0"]) 
-            c1 = st.number_input("c1", min_value=0.0, step=0.001, format="%.3f", value=defaults["c1"]) 
+            c0 = st.number_input("c0", min_value=0.0, value=defaults["c0"])
+            c1 = st.number_input("c1", min_value=0.0, step=0.001, format="%.3f", value=defaults["c1"])
         if st.button("Reset Solo Game with these params"):
             st.session_state.solo_state = {"t": 0, "S": float(S0), "cum": 0.0, "history": []}
             st.session_state.solo_params = {"S0": float(S0), "Smax": float(S0), "R": float(R), "T": int(T), "qmax": float(qmax), "P": float(P), "gamma": float(gamma), "c0": float(c0), "c1": float(c1)}
@@ -456,13 +466,16 @@ def stage_a_solo():
     params = st.session_state.solo_params
     state = st.session_state.solo_state
 
+    # Auto-end after T rounds (disable controls and show message)
+    game_finished = state["t"] >= params["T"]
+
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
     # --- Decision first (so metrics can reflect current choice) ---
-    q = st.slider("Choose pumping rate per well (you own 4 wells)", 0.0, float(params["qmax"]), 40.0, 1.0)
-    group_q_preview = q * N_WELLS
+    q = st.slider("Choose pumping rate per well (you own 4 wells)", 0.0, float(params["qmax"]), 40.0, 1.0, disabled=game_finished)
+    group_q_preview = q * SOLO_WELLS
     pi_per_well = profit_one_period(q, state["S"], params)
-    pi_total = pi_per_well * N_WELLS
+    pi_total = pi_per_well * SOLO_WELLS
 
     # --- Metrics with PROFIT front and center ---
     cols = st.columns(3)
@@ -476,10 +489,14 @@ def stage_a_solo():
     # --- Aquifer gauge (no numbers) ---
     stock_gauge(state["S"], params["Smax"], label="Aquifer stock")
 
+    if game_finished:
+        st.success(f"Game finished automatically after {params['T']} rounds.")
+        return
+
     # --- Actions ---
     c1, c2, c3 = st.columns([1,1,1])
     with c1:
-        if st.button("Finalize Pumping Decision (Solo)"):
+        if st.button("Finalize Pumping Decision (Solo)", disabled=game_finished):
             t = state["t"]
             S_t = state["S"]
             group_q = group_q_preview
@@ -507,85 +524,15 @@ def stage_a_solo():
 
 def stage_b_multiplayer():
     st.subheader("Stage B — Common Pool (Multiplayer)")
-    st.caption("Up to 4 students share one aquifer. Each controls one well. Highest cumulative profit wins.")
+    st.caption("Up to 5 students share one aquifer. Each controls one well. Highest cumulative profit wins.")
 
     # Defaults mirror Solo
     defaults = {"S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 12, "qmax": 80.0, "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.006}
 
-    tab_host, tab_player = st.tabs(["Host a Room", "Join as Player"])
+    # Make "Join as Player" the DEFAULT tab by listing it first
+    tab_player, tab_host = st.tabs(["Join as Player", "Host a Room"])
 
-    with tab_host:
-        st.markdown("#### Host Controls")
-        new_params = room_params_form(defaults)
-        if new_params:
-            code = create_room(new_params)
-            st.success(f"Room created. Code: **{code}**")
-            st.info("Share this code. Click 'Start Game' when ready.")
-            st.session_state["host_room_code"] = code
-
-        code_existing = st.text_input("Or manage existing room code", value=st.session_state.get("host_room_code", ""))
-        if code_existing and room_exists(code_existing):
-            params, state = load_room(code_existing)
-            players = list_players(code_existing)
-
-            cols = st.columns(4)
-            with cols[0]:
-                nice_metric("Status", state["status"].upper())
-            with cols[1]:
-                nice_metric("Current round", str(state["current_round"]))
-            with cols[2]:
-                nice_metric("Players joined", f"{len(players)}/{N_WELLS}")
-            with cols[3]:
-                rr = get_round_row(code_existing, state["current_round"])  # S at start of this round
-                nice_metric("Aquifer S (host)", f"{rr['S']:.1f}")
-
-            # Host can keep numeric S; players won't see numbers.
-            st.progress(min(1.0, rr["S"] / params["Smax"]))
-
-            if state["status"] == "lobby":
-                st.write("**Players in lobby**:")
-                st.table([{k: p[k] for k in ("name", "well_index", "cumulative_profit")} for p in players])
-                if len(players) > 0 and st.button("Start Game"):
-                    state["status"] = "running"
-                    save_room_state(code_existing, state)
-                    st.rerun()
-
-            elif state["status"] == "running":
-                st.write("**Game is running.** It advances automatically once all players submit.")
-                if st.button("Force Advance (host override)"):
-                    acts = fetch_actions(code_existing, state["current_round"])
-                    submitted_pids = {a["player_id"] for a in acts if a["submitted"]}
-                    joined = list_players(code_existing)
-                    for p in joined:
-                        if p["player_id"] not in submitted_pids:
-                            upsert_action(code_existing, state["current_round"], p["player_id"], 0.0, submitted=True, profit_val=0.0)
-                    maybe_advance_round(code_existing)
-                    st.rerun()
-                if st.button("End Game Now"):
-                    state["status"] = "finished"
-                    save_room_state(code_existing, state)
-                    st.rerun()
-
-            elif state["status"] == "finished":
-                st.success("Game finished.")
-
-            # Leaderboard
-            st.markdown("### Leaderboard (cumulative profits)")
-            players_sorted = sorted(players, key=lambda p: p["cumulative_profit"], reverse=True)
-            st.table([{ "Rank": i+1, "Player": p["name"], "Score": round(p["cumulative_profit"], 1)} for i, p in enumerate(players_sorted)])
-
-            last_t = max(0, state["current_round"] - (1 if state["status"] != "lobby" else 0))
-            rr_last = get_round_row(code_existing, last_t)
-            st.markdown("#### Last resolved round summary")
-            st.write({"round": last_t, "S": rr_last["S"], "group_q": rr_last["group_q"]})
-
-            if st.button("Refresh status"):
-                maybe_advance_round(code_existing)
-                st.rerun()
-        else:
-            if code_existing:
-                st.warning("Room not found. Create a new room above.")
-
+    # ---- Player tab (default visible) ----
     with tab_player:
         st.markdown("#### Join a Room")
         with st.form("join_form"):
@@ -640,7 +587,7 @@ def stage_b_multiplayer():
 
             qmax = float(params.get("qmax", 80.0))
             q_val = my_act["q"] if my_act else min(40.0, qmax)
-            q = st.slider("Choose your pumping rate q (acre‑ft)", 0.0, qmax, float(q_val), 1.0, disabled=already_submitted)
+            q = st.slider("Choose your pumping rate q (acre-ft)", 0.0, qmax, float(q_val), 1.0, disabled=already_submitted)
 
             pi_preview = profit_one_period(q, rr["S"], params)
 
@@ -684,30 +631,10 @@ def stage_b_multiplayer():
             if my_row:
                 st.success(f"Your cumulative profit: {my_row['cumulative_profit']:.1f}")
 
-# ------------------------------
-# Main App
-# ------------------------------
-
-def main():
-    st.title("LPPP3559/5559 Groundwater Commons Game")
-    st.caption("You are a farmer pumping groundwater to irrigate your crops. Pumping water lowers the water level, which makes pumping slightly more expensive. Meanwhile, the aquifer naturally replenishes at some rate.")
-
-    with st.sidebar:
-        st.markdown("### Model in one glance")
-        st.markdown(
-            "- Profit each round: **P·q − ½γq² − c₀q − c₁(Smax−S)q**."\
-            "\n- Stock update: **Sₜ₊₁ = Sₜ + R − Σqᵢ**."\
-            "\n- Score: simple cumulative profit."
-        )
-        st.markdown("---")
-        st.markdown("**Instructor tip:** Run Stage A first, then a Stage B room. Keep parameters fixed to compare behavior.")
-
-    tab_a, tab_b = st.tabs(["Stage A (Solo)", "Stage B (Multiplayer)"])
-    with tab_a:
-        stage_a_solo()
-    with tab_b:
-        stage_b_multiplayer()
-
-
-if __name__ == "__main__":
-    main()
+    # ---- Host tab (second) ----
+    with tab_host:
+        st.markdown("#### Host Controls")
+        new_params = room_params_form(defaults)
+        if new_params:
+            code = create_room(new_params)
+            st.success(f"Room created. Code: **{co**
