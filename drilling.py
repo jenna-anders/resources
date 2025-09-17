@@ -1,17 +1,11 @@
 # Groundwater Commons Game (Streamlit) — Simplified Core Version
 # --------------------------------------------------------------
-# This version focuses on the *essential* tragedy‑of‑the‑commons mechanics only.
-# Removed as extraneous for the core learning objective:
-#   • Per‑unit tax τ (and all UI tied to it)
-#   • Threshold/price‑drop events (no discontinuous profit shocks)
-#   • Group extraction CAP/permit toggle
-#   • Discounting (scoring is simple cumulative profit)
-# What remains:
-#   • Stage A (Solo): one player privately controls all 4 wells (one q applied to each well)
-#   • Stage B (Multiplayer): up to 4 players share one aquifer (one well each)
-#   • Clear private payoffs with diminishing returns and depth‑dependent costs
-#   • Dynamic aquifer stock with exogenous recharge
-#   • Simple, readable Streamlit UI
+# Update: Profits are now *front and center* in the player UI.
+# Changes per request:
+#   • The metric box formerly labeled "Aquifer stock S" now shows **This round profit (undiscounted)**.
+#   • The blue info bar has been removed and replaced with a **linear gauge** (no numbers) illustrating aquifer stock.
+#   • Still simplified: no taxes, no thresholds, no caps, no discounting.
+#   • Stages: A (Solo) and B (Multiplayer with rooms).
 #
 # How to run
 #   1) pip install streamlit
@@ -40,6 +34,7 @@ st.markdown(
       .mono {font-family: ui-monospace, SFMono-Regular, Menlo, Monaco, Consolas, "Liberation Mono", "Courier New", monospace;}
       .muted {color:#9ca3af}
       .divider {height:1px; background:#1f2937; margin:10px 0 14px}
+      .gauge-label {margin-top:8px; color:#9ca3af; font-size:13px}
     </style>
     """,
     unsafe_allow_html=True,
@@ -391,6 +386,11 @@ def nice_metric(label: str, value: str, help_text: Optional[str] = None):
             st.caption(help_text)
 
 
+def stock_gauge(S: float, Smax: float, label: str = "Aquifer stock"):
+    st.markdown(f"<div class='gauge-label'>{label}</div>", unsafe_allow_html=True)
+    st.progress(min(1.0, S / Smax))  # no numbers, just the bar
+
+
 def room_params_form(defaults: Dict) -> Dict:
     """Host's parameter form with only essential knobs."""
     with st.form("room_params_form"):
@@ -458,23 +458,25 @@ def stage_a_solo():
 
     st.markdown("<div class='divider'></div>", unsafe_allow_html=True)
 
+    # --- Decision first (so metrics can reflect current choice) ---
+    q = st.slider("Choose pumping rate per well (you own 4 wells)", 0.0, float(params["qmax"]), 40.0, 1.0)
+    group_q_preview = q * N_WELLS
+    pi_per_well = profit_one_period(q, state["S"], params)
+    pi_total = pi_per_well * N_WELLS
+
+    # --- Metrics with PROFIT front and center ---
     cols = st.columns(3)
     with cols[0]:
         nice_metric("Round", str(state["t"]))
     with cols[1]:
-        nice_metric("Aquifer stock S", f"{state['S']:.1f}")
+        nice_metric("This round profit (undiscounted)", f"{pi_total:.1f}")
     with cols[2]:
         nice_metric("Cumulative profit", f"{state['cum']:.1f}")
 
-    # One q applies to each of the 4 wells
-    q = st.slider("Choose pumping rate per well (you own 4 wells)", 0.0, float(params["qmax"]), 40.0, 1.0)
-    group_q_preview = q * N_WELLS
+    # --- Aquifer gauge (no numbers) ---
+    stock_gauge(state["S"], params["Smax"], label="Aquifer stock")
 
-    # Profit preview for this round
-    pi_per_well = profit_one_period(q, state["S"], params)
-    pi_total = pi_per_well * N_WELLS
-    st.info(f"This round profit (undiscounted): {pi_total:.1f}  |  Group extraction preview: {group_q_preview:.1f}")
-
+    # --- Actions ---
     c1, c2, c3 = st.columns([1,1,1])
     with c1:
         if st.button("Finalize Pumping Decision (Solo)"):
@@ -535,9 +537,10 @@ def stage_b_multiplayer():
                 nice_metric("Players joined", f"{len(players)}/{N_WELLS}")
             with cols[3]:
                 rr = get_round_row(code_existing, state["current_round"])  # S at start of this round
-                nice_metric("Aquifer S", f"{rr['S']:.1f}")
+                nice_metric("Aquifer S (host)", f"{rr['S']:.1f}")
 
-            st.progress(min(1.0, rr["S"] / params["Smax"]), text=f"Aquifer stock S = {rr['S']:.1f} / {params['Smax']:.0f}")
+            # Host can keep numeric S; players won't see numbers.
+            st.progress(min(1.0, rr["S"] / params["Smax"]))
 
             if state["status"] == "lobby":
                 st.write("**Players in lobby**:")
@@ -574,7 +577,7 @@ def stage_b_multiplayer():
             last_t = max(0, state["current_round"] - (1 if state["status"] != "lobby" else 0))
             rr_last = get_round_row(code_existing, last_t)
             st.markdown("#### Last resolved round summary")
-            st.write({"round": last_t, "S": rr_last["S"], "group_q": rr_last["group_q"], "event": rr_last.get("event")})
+            st.write({"round": last_t, "S": rr_last["S"], "group_q": rr_last["group_q"]})
 
             if st.button("Refresh status"):
                 maybe_advance_round(code_existing)
@@ -619,17 +622,6 @@ def stage_b_multiplayer():
             st.markdown(f"**Room:** `{code}`  |  **You:** `{st.session_state.get('player_name','(unnamed)')}`  |  **Well:** `{st.session_state.get('well_index',0)+1}`")
 
             rr = get_round_row(code, state["current_round"])  # S at start of this round
-            cols = st.columns(4)
-            with cols[0]:
-                nice_metric("Status", state["status"].upper())
-            with cols[1]:
-                nice_metric("Round", str(state["current_round"]))
-            with cols[2]:
-                nice_metric("Aquifer S", f"{rr['S']:.1f}")
-            with cols[3]:
-                nice_metric("Max q", f"{params.get('qmax',80.0):.0f}")
-
-            st.progress(min(1.0, rr["S"] / params["Smax"]), text=f"Aquifer stock S = {rr['S']:.1f} / {params['Smax']:.0f}")
 
             if state["status"] == "lobby":
                 st.info("Waiting for host to start the game.")
@@ -641,7 +633,7 @@ def stage_b_multiplayer():
                 st.success("Game finished. See leaderboard on the Host tab.")
                 return
 
-            # Decision panel
+            # --- Decision first so metrics show current profit ---
             acts = fetch_actions(code, state["current_round"])  # my row may or may not exist
             my_act = next((a for a in acts if a["player_id"] == pid), None)
             already_submitted = bool(my_act and my_act["submitted"])
@@ -651,8 +643,22 @@ def stage_b_multiplayer():
             q = st.slider("Choose your pumping rate q (acre‑ft)", 0.0, qmax, float(q_val), 1.0, disabled=already_submitted)
 
             pi_preview = profit_one_period(q, rr["S"], params)
-            st.info(f"This round profit (preview, undiscounted): {pi_preview:.1f}")
 
+            # --- Metrics with PROFIT front and center ---
+            cols = st.columns(4)
+            with cols[0]:
+                nice_metric("Status", state["status"].upper())
+            with cols[1]:
+                nice_metric("Round", str(state["current_round"]))
+            with cols[2]:
+                nice_metric("This round profit (undiscounted)", f"{pi_preview:.1f}")
+            with cols[3]:
+                nice_metric("Max q", f"{params.get('qmax',80.0):.0f}")
+
+            # --- Aquifer gauge (no numbers for players) ---
+            stock_gauge(rr["S"], params["Smax"], label="Aquifer stock")
+
+            # Submit decision
             colb1, colb2, colb3 = st.columns([1,1,1])
             with colb1:
                 if st.button("Finalize Pumping Decision", disabled=already_submitted):
