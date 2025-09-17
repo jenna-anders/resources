@@ -637,4 +637,98 @@ def stage_b_multiplayer():
         new_params = room_params_form(defaults)
         if new_params:
             code = create_room(new_params)
-            st.success(f"Room created. Code: **{co**
+            st.success(f"Room created. Code: **{code}**")
+            st.info("Share this code. Click 'Start Game' when ready.")
+            st.session_state["host_room_code"] = code
+
+        code_existing = st.text_input("Or manage existing room code", value=st.session_state.get("host_room_code", ""))
+        if code_existing and room_exists(code_existing):
+            params, state = load_room(code_existing)
+            players = list_players(code_existing)
+            capacity = get_room_capacity(code_existing)
+
+            cols = st.columns(4)
+            with cols[0]:
+                nice_metric("Status", state["status"].upper())
+            with cols[1]:
+                nice_metric("Current round", str(state["current_round"]))
+            with cols[2]:
+                nice_metric("Players joined", f"{len(players)}/{capacity}")
+            with cols[3]:
+                rr = get_round_row(code_existing, state["current_round"])  # S at start of this round
+                nice_metric("Aquifer S (host)", f"{rr['S']:.1f}")
+
+            # Host can keep numeric S; players won't see numbers.
+            st.progress(min(1.0, rr["S"] / params["Smax"]))
+
+            if state["status"] == "lobby":
+                st.write("**Players in lobby**:")
+                st.table([{k: p[k] for k in ("name", "well_index", "cumulative_profit")} for p in players])
+                if len(players) > 0 and st.button("Start Game"):
+                    state["status"] = "running"
+                    save_room_state(code_existing, state)
+                    st.rerun()
+
+            elif state["status"] == "running":
+                st.write("**Game is running.** It advances automatically once all players submit.")
+                if st.button("Force Advance (host override)"):
+                    acts = fetch_actions(code_existing, state["current_round"])
+                    submitted_pids = {a["player_id"] for a in acts if a["submitted"]}
+                    joined = list_players(code_existing)
+                    for p in joined:
+                        if p["player_id"] not in submitted_pids:
+                            upsert_action(code_existing, state["current_round"], p["player_id"], 0.0, submitted=True, profit_val=0.0)
+                    maybe_advance_round(code_existing)
+                    st.rerun()
+                if st.button("End Game Now"):
+                    state["status"] = "finished"
+                    save_room_state(code_existing, state)
+                    st.rerun()
+
+            elif state["status"] == "finished":
+                st.success("Game finished.")
+
+            # Leaderboard
+            st.markdown("### Leaderboard (cumulative profits)")
+            players_sorted = sorted(players, key=lambda p: p["cumulative_profit"], reverse=True)
+            st.table([{ "Rank": i+1, "Player": p["name"], "Score": round(p["cumulative_profit"], 1)} for i, p in enumerate(players_sorted)])
+
+            last_t = max(0, state["current_round"] - (1 if state["status"] != "lobby" else 0))
+            rr_last = get_round_row(code_existing, last_t)
+            st.markdown("#### Last resolved round summary")
+            st.write({"round": last_t, "S": rr_last["S"], "group_q": rr_last["group_q"]})
+
+            if st.button("Refresh status"):
+                maybe_advance_round(code_existing)
+                st.rerun()
+        else:
+            if code_existing:
+                st.warning("Room not found. Create a new room above.")
+
+# ------------------------------
+# Main App
+# ------------------------------
+
+def main():
+    st.title("LPPP3559/5559 Groundwater Commons Game")
+    st.caption("You are a farmer pumping groundwater to irrigate your crops. Pumping water lowers the water level, which makes pumping slightly more expensive. Meanwhile, the aquifer naturally replenishes at some rate.")
+
+    with st.sidebar:
+        st.markdown("### Model in one glance")
+        st.markdown(
+            "- Profit each round: **P·q − ½γq² − c₀q − c₁(Smax−S)q**."
+            "\n- Stock update: **Sₜ₊₁ = Sₜ + R − Σqᵢ**."
+            "\n- Score: simple cumulative profit."
+        )
+        st.markdown("---")
+        st.markdown("**Instructor tip:** Run Stage A first, then a Stage B room. Keep parameters fixed to compare behavior.")
+
+    tab_a, tab_b = st.tabs(["Stage A (Solo)", "Stage B (Multiplayer)"])
+    with tab_a:
+        stage_a_solo()
+    with tab_b:
+        stage_b_multiplayer()
+
+
+if __name__ == "__main__":
+    main()
