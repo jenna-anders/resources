@@ -475,7 +475,6 @@ def room_params_form(defaults: Dict) -> Dict:
             c1 = st.number_input("Depth cost slope c1", min_value=0.0, value=float(defaults["c1"]))
         with col3:
             r = st.number_input("Discount rate r", min_value=0.0, value=float(defaults["discount_rate"]))
-            tax = st.number_input("Per-unit tax τ (optional)", min_value=0.0, value=float(defaults.get("tax", 0.0)))
             cap_enabled = st.checkbox("Enable group extraction CAP", value=bool(defaults.get("cap_enabled", False)))
             cap = st.number_input("CAP value (sum q)", min_value=0.0, value=float(defaults.get("cap", 0.0))) if cap_enabled else 0.0
         st.markdown("---")
@@ -492,7 +491,7 @@ def room_params_form(defaults: Dict) -> Dict:
         return {
             "S0": float(S0), "Smax": float(S0), "R": float(R), "T": int(T), "qmax": float(qmax),
             "P": float(P), "gamma": float(gamma), "c0": float(c0), "c1": float(c1),
-            "discount_rate": float(r), "tax": float(tax),
+            "discount_rate": float(r),
             "cap_enabled": bool(cap_enabled), "cap": float(cap),
             "threshold_enabled": bool(threshold_enabled),
             "threshold_level": float(threshold_level),
@@ -515,7 +514,7 @@ def stage_a_solo():
     defaults = {
         "S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 12, "qmax": 80.0,
         "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.05, "discount_rate": 0.10,
-        "tax": 0.0, "price_factor": 1.0,
+        "price_factor": 1.0,
         "threshold_enabled": True, "threshold_level": 250.0, "threshold_price_factor": 0.7,
     }
 
@@ -534,12 +533,10 @@ def stage_a_solo():
         with s4:
             c0 = st.number_input("c0", min_value=0.0, value=defaults["c0"])
             c1 = st.number_input("c1", min_value=0.0, value=defaults["c1"])
-        tcol1, tcol2, tcol3 = st.columns(3)
+        tcol1, tcol3 = st.columns(2)
         with tcol1:
             r = st.number_input("discount r", min_value=0.0, value=defaults["discount_rate"])
         with tcol2:
-            tax = st.number_input("tax τ", min_value=0.0, value=defaults["tax"])
-        with tcol3:
             th_on = st.checkbox("Enable threshold", value=True)
         if th_on:
             t2c1, t2c2 = st.columns(2)
@@ -564,7 +561,7 @@ def stage_a_solo():
     local_params = {
         "S0": float(S0), "Smax": float(S0), "R": float(R), "T": int(T), "qmax": float(qmax),
         "P": float(P), "gamma": float(gamma), "c0": float(c0), "c1": float(c1),
-        "discount_rate": float(r), "tax": float(tax), "price_factor": st.session_state.solo_state["price_factor"],
+        "discount_rate": float(r), "price_factor": st.session_state.solo_state["price_factor"],
         "threshold_enabled": bool(th_on), "threshold_level": float(th_level), "threshold_price_factor": float(th_factor),
     }
 
@@ -651,7 +648,7 @@ def stage_b_multiplayer():
     defaults = {
         "S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 12, "qmax": 80.0,
         "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.05, "discount_rate": 0.10,
-        "tax": 0.0, "cap_enabled": False, "cap": 0.0,
+        "cap_enabled": False, "cap": 0.0,
         "threshold_enabled": True, "threshold_level": 250.0, "threshold_price_factor": 0.7,
         "price_factor": 1.0,
     }
@@ -850,7 +847,7 @@ def main():
     with st.sidebar:
         st.markdown("### How this game works")
         st.markdown(
-            "- Profit each round: **P·q − ½γq² − c₀q − c₁(Smax−S)q − τq** (if tax τ is on)."\
+            "- Profit each round: **P·q − ½γq² − c₀q − c₁(Smax−S)q."\
             "\n- Stock update: **Sₜ₊₁ = Sₜ + R − Σqᵢ**. If a threshold is enabled and **S** falls below it, future price is multiplied by a factor (<1)."\
             "\n- Scoring: discounted cumulative profit ∑ₜ πₜ/(1+r)ᵗ."
         )
