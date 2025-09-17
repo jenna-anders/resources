@@ -405,7 +405,7 @@ def room_params_form(defaults: Dict) -> Dict:
         with col3:
             gamma = st.number_input("Diminishing returns γ", min_value=0.0, value=float(defaults["gamma"]))
             c0 = st.number_input("Base pumping cost c0", min_value=0.0, value=float(defaults["c0"]))
-            c1 = st.number_input("Depth cost slope c1", min_value=0.0, value=float(defaults["c1"]))
+            c1 = st.number_input("Depth cost slope c1", min_value=0.0, step=0.001, format="%.3f", value=float(defaults["c1"]))
         submitted = st.form_submit_button("Create room")
     if submitted:
         return {
@@ -425,7 +425,7 @@ def stage_a_solo():
     # Baseline defaults
     defaults = {
         "S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 12, "qmax": 80.0,
-        "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.006,
+        "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.05,
     }
 
     with st.expander("Solo parameters (optional)", expanded=False):
@@ -441,7 +441,7 @@ def stage_a_solo():
             gamma = st.number_input("γ", min_value=0.0, value=defaults["gamma"]) 
         with s4:
             c0 = st.number_input("c0", min_value=0.0, value=defaults["c0"]) 
-            c1 = st.number_input("c1", min_value=0.0, value=defaults["c1"]) 
+            c1 = st.number_input("c1", min_value=0.0, step=0.001, format="%.3f", value=defaults["c1"]) 
         if st.button("Reset Solo Game with these params"):
             st.session_state.solo_state = {"t": 0, "S": float(S0), "cum": 0.0, "history": []}
             st.session_state.solo_params = {"S0": float(S0), "Smax": float(S0), "R": float(R), "T": int(T), "qmax": float(qmax), "P": float(P), "gamma": float(gamma), "c0": float(c0), "c1": float(c1)}
@@ -510,7 +510,7 @@ def stage_b_multiplayer():
     st.caption("Up to 4 students share one aquifer. Each controls one well. Highest cumulative profit wins.")
 
     # Defaults mirror Solo
-    defaults = {"S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 12, "qmax": 80.0, "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.006}
+    defaults = {"S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 12, "qmax": 80.0, "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.05}
 
     tab_host, tab_player = st.tabs(["Host a Room", "Join as Player"])
 
@@ -689,8 +689,8 @@ def stage_b_multiplayer():
 # ------------------------------
 
 def main():
-    st.title("LPPP3559/5559 Groundwater Commons Game")
-    st.caption("You are a farmer pumping groundwater to irrigate your crops. You are pumping from an aquifer which starts with 1000 acre-feet of water. Pumping water lowers the water level and makes pumping more expensive; meanwhile, the aquifer does naturally replenish at some rate. Make your pumping decision to maximize your profit.")
+    st.title("Groundwater Commons Game — Simplified")
+    st.caption("Core tragedy‑of‑the‑commons dynamics: private payoffs vs shared aquifer stock.")
 
     with st.sidebar:
         st.markdown("### Model in one glance")
