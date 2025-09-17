@@ -393,14 +393,14 @@ def paired_stage_ui(class_code: str, econ: EconConfig, user_id: str, name: str):
             st.write(f"Queue length in `{class_code}`: **{qlen}** (pairs are formed automatically)")
             st.caption("Keep this page open. It will refresh while you wait.")
             time.sleep(REFRESH_SEC)
-            st.experimental_rerun()
+            st.rerun()
         else:
             room = get_room(room_id)
             if room is None:
                 st.error("Room not found (it might have been closed). Click 'Join Queue' again.")
                 if st.button("Re-Queue"):
                     enqueue_student(class_code, user_id, name)
-                    st.experimental_rerun()
+                    st.rerun()
                 return
 
             # Identify whether this user is P1 or P2 (by assignment time)
@@ -410,7 +410,7 @@ def paired_stage_ui(class_code: str, econ: EconConfig, user_id: str, name: str):
                 st.warning("You are not part of this room. Please re-queue.")
                 if st.button("Re-Queue"):
                     enqueue_student(class_code, user_id, name)
-                    st.experimental_rerun()
+                    st.rerun()
                 return
 
             st.success(f"Matched! Room `{room.room_id}` — You are **{role}**")
@@ -420,7 +420,7 @@ def paired_stage_ui(class_code: str, econ: EconConfig, user_id: str, name: str):
             if not room.both_ready():
                 st.info("Waiting for both players to be fully connected...")
                 time.sleep(REFRESH_SEC)
-                st.experimental_rerun()
+                st.rerun()
                 return
 
             # Round management
