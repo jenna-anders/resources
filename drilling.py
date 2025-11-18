@@ -210,7 +210,7 @@ def list_players(code: str) -> List[Dict]:
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(
-            "SELECT player_id, name, well_index, cumulative_profit, joined_at, last_active FROM players WHERE room_code=? ORDER BY well_index ASC",
+            "SELECT player_id, name, well_index, cumulative_profit, joined_at, last_active, COALESCE(is_host,0) FROM players WHERE room_code=? ORDER BY well_index ASC",
             (code,),
         )
         return [
@@ -221,12 +221,13 @@ def list_players(code: str) -> List[Dict]:
                 "cumulative_profit": r[3],
                 "joined_at": r[4],
                 "last_active": r[5],
+                "is_host": int(r[6]),
             }
             for r in cur.fetchall()
         ]
 
 
-def add_or_get_player(code: str, name: str) -> Dict:
+def add_or_get_player(code: str, name: str, make_host: bool=False) -> Dict:
     """Join a room; if name already exists, reuse it; else allocate next well index within capacity."""
     with get_conn() as conn:
         cur = conn.cursor()
@@ -248,8 +249,8 @@ def add_or_get_player(code: str, name: str) -> Dict:
             pid = str(uuid.uuid4())
             now = datetime.utcnow().isoformat()
             cur.execute(
-                "INSERT INTO players(player_id, room_code, name, well_index, cumulative_profit, joined_at, last_active) VALUES(?,?,?,?,?,?,?)",
-                (pid, code, name, win, 0.0, now, now),
+                "INSERT INTO players(player_id, room_code, name, well_index, cumulative_profit, joined_at, last_active, is_host) VALUES(?,?,?,?,?,?,?,?)",
+                (pid, code, name, win, 0.0, now, now, 1 if (make_host and not is_room_host_assigned(code)) else 0),
             )
             conn.commit()
             cum = 0.0
@@ -386,6 +387,33 @@ def maybe_advance_round(code: str):
 # ------------------------------
 # UI helpers
 # ------------------------------
+
+
+def get_player(player_id: str):
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT player_id, room_code, name, well_index, cumulative_profit, joined_at, last_active, COALESCE(is_host,0) FROM players WHERE player_id=?", (player_id,))
+        row = cur.fetchone()
+        if not row:
+            return None
+        return {"player_id": row[0], "room_code": row[1], "name": row[2], "well_index": row[3], "cumulative_profit": row[4], "joined_at": row[5], "last_active": row[6], "is_host": int(row[7])}
+
+def is_room_host_assigned(code: str) -> bool:
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT 1 FROM players WHERE room_code=? AND COALESCE(is_host,0)=1 LIMIT 1", (code,))
+        return cur.fetchone() is not None
+
+def set_player_host(code: str, player_id: str) -> bool:
+    """Promote a player to host if room has no host yet. Returns True on success."""
+    with get_conn() as conn:
+        cur = conn.cursor()
+        cur.execute("SELECT 1 FROM players WHERE room_code=? AND COALESCE(is_host,0)=1 LIMIT 1", (code,))
+        if cur.fetchone():
+            return False
+        cur.execute("UPDATE players SET is_host=1 WHERE player_id=? AND room_code=?", (player_id, code))
+        conn.commit()
+        return cur.rowcount > 0
 
 def nice_metric(label: str, value: str, help_text: Optional[str] = None):
     with st.container(border=True):
@@ -573,6 +601,25 @@ def stage_b_multiplayer():
 
             if state["status"] == "lobby":
                 st.info("Waiting for host to start the game.")
+            # Host mini-panel: show host controls inline if this player is host
+            me = get_player(pid)
+            am_host = bool(me and int(me.get("is_host", 0)) == 1)
+
+            if state["status"] == "lobby":
+                if am_host:
+                    st.success("You are the HOST for this room. You can start the game when ready.")
+                    if st.button("Start Game (host)", key="player_host_start"):
+                        state["status"] = "running"
+                        save_room_state(code, state)
+                        st.rerun()
+                else:
+                    if not is_room_host_assigned(code) and st.button("Claim Host Role for this Room", key="player_claim_host"):
+                        if set_player_host(code, pid):
+                            st.success("You are now the host for this room.")
+                        else:
+                            st.warning("Host already assigned.")
+                        st.rerun()
+
                 if st.button("Refresh"):
                     st.rerun()
                 return
@@ -581,6 +628,25 @@ def stage_b_multiplayer():
                 st.success("Game finished. See leaderboard on the Host tab.")
                 return
 
+
+            if am_host and state["status"] == "running":
+                st.markdown("##### Host Controls (inline)")
+                cA, cB = st.columns(2)
+                with cA:
+                    if st.button("Force Advance (host override)", key="player_host_force_adv"):
+                        acts = fetch_actions(code, state["current_round"])
+                        submitted_pids = {a["player_id"] for a in acts if a["submitted"]}
+                        joined = list_players(code)
+                        for pz in joined:
+                            if pz["player_id"] not in submitted_pids:
+                                upsert_action(code, state["current_round"], pz["player_id"], 0.0, submitted=True, profit_val=0.0)
+                        maybe_advance_round(code)
+                        st.rerun()
+                with cB:
+                    if st.button("End Game Now (host)", key="player_host_end"):
+                        state["status"] = "finished"
+                        save_room_state(code, state)
+                        st.rerun()
             # --- Decision ---
             acts = fetch_actions(code, state["current_round"])  # my row may or may not exist
             my_act = next((a for a in acts if a["player_id"] == pid), None)
@@ -701,7 +767,7 @@ def stage_b_multiplayer():
                 st.error("Room not found. Create or enter a valid code.")
             else:
                 try:
-                    player = add_or_get_player(code_existing, (join_name.strip() or "Host"))
+                    player = add_or_get_player(code_existing, (join_name.strip() or "Host"), make_host=True)
                     # Persist session so the Host also sees the player console on the Join tab
                     st.session_state["room_code"] = code_existing
                     st.session_state["player_id"] = player["player_id"]
