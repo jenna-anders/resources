@@ -3,13 +3,14 @@
 # Changes in this edit:
 #   • Stage B: "Join as Player" is the default tab (Host is second).
 #   • Auto-end after T=12 rounds (both Solo + Multiplayer).
-#   • Host can create rooms with 4 or 5 players (per-room capacity).
+#   • Host can create rooms with up to 6 players (per-room capacity; fewer can still play).
 #   • Default c1 remains 0.006 (as in your version).
 #
 # Save as streamlit_app.py (or your filename) and run: streamlit run streamlit_app.py
 
 from __future__ import annotations
 import streamlit as st
+import streamlit.components.v1 as components
 import sqlite3
 import json
 import uuid
@@ -38,7 +39,7 @@ st.markdown(
 
 DB_PATH = "commons_game.db"
 SOLO_WELLS = 4              # Solo: player owns 4 wells
-DEFAULT_ROOM_CAPACITY = 4   # Stage B default; host can pick 4 or 5 per room
+DEFAULT_ROOM_CAPACITY = 6   # Stage B default; host can pick 4 or 5 per room
 
 # ------------------------------
 # SQLite helpers (multiplayer coordination)
@@ -410,7 +411,7 @@ def room_params_form(defaults: Dict) -> Dict:
         with col2:
             qmax = st.number_input("Max q per player", min_value=0.0, value=float(defaults["qmax"]))
             P = st.number_input("Price P", min_value=0.0, value=float(defaults["P"]))
-            players_expected = st.selectbox("Players per room", [4, 5], index=0)
+            players_expected = st.selectbox("Players per room", [6, 5, 4], index=0)
         with col3:
             gamma = st.number_input("Diminishing returns γ", min_value=0.0, value=float(defaults["gamma"]))
             c0 = st.number_input("Base pumping cost c0", min_value=0.0, value=float(defaults["c0"]))
@@ -434,7 +435,7 @@ def stage_a_solo():
 
     # Baseline defaults
     defaults = {
-        "S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 12, "qmax": 80.0,
+        "S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 8, "qmax": 80.0,
         "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.006,
     }
 
@@ -524,10 +525,10 @@ def stage_a_solo():
 
 def stage_b_multiplayer():
     st.subheader("Stage B — Common Pool (Multiplayer)")
-    st.caption("Up to 5 students share one aquifer. Each controls one well. Highest cumulative profit wins.")
+    st.caption("Up to 6 students share one aquifer. Each controls one well. Highest cumulative profit wins.")
 
     # Defaults mirror Solo
-    defaults = {"S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 12, "qmax": 80.0, "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.006}
+    defaults = {"S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 8, "qmax": 80.0, "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.006}
 
     # Make "Join as Player" the DEFAULT tab by listing it first
     tab_player, tab_host = st.tabs(["Join as Player", "Host a Room"])
@@ -585,6 +586,23 @@ def stage_b_multiplayer():
             my_act = next((a for a in acts if a["player_id"] == pid), None)
             already_submitted = bool(my_act and my_act["submitted"])
 
+            # Auto-refresh to speed auto-advance when waiting for others
+            capacity_now = get_room_capacity(code)
+            joined_players = list_players(code)
+            n_players_now = min(len(joined_players), capacity_now)
+            acts_now = fetch_actions(code, state["current_round"])  # current round actions
+            joined_ids_now = {p["player_id"] for p in joined_players[:capacity_now]}
+            submitted_count = sum(1 for a in acts_now if a["submitted"] and a["player_id"] in joined_ids_now)
+            if state["status"] == "running" and submitted_count < n_players_now:
+                # Light-weight client reload every ~1.2s while waiting
+                components.html("""
+<script>
+setTimeout(function(){window.parent.location.reload();}, 1200);
+</script>
+""", height=0)
+
+
+
             qmax = float(params.get("qmax", 80.0))
             q_val = my_act["q"] if my_act else min(40.0, qmax)
             q = st.slider("Choose your pumping rate q (acre-ft)", 0.0, qmax, float(q_val), 1.0, disabled=already_submitted)
@@ -634,12 +652,25 @@ def stage_b_multiplayer():
     # ---- Host tab (second) ----
     with tab_host:
         st.markdown("#### Host Controls")
-        new_params = room_params_form(defaults)
+        with st.expander("Room setup (optional)", expanded=False):
+            new_params = room_params_form(defaults)
         if new_params:
             code = create_room(new_params)
             st.success(f"Room created. Code: **{code}**")
             st.info("Share this code. Click 'Start Game' when ready.")
             st.session_state["host_room_code"] = code
+            join_name = st.text_input("Join this room as (optional display name)", value="Host")
+            if st.button("Join as Player in this Room"):
+                try:
+                    player = add_or_get_player(code, (join_name.strip() or "Host"))
+                    st.session_state["room_code"] = code
+                    st.session_state["player_id"] = player["player_id"]
+                    st.session_state["player_name"] = join_name.strip() or "Host"
+                    st.session_state["well_index"] = player["well_index"]
+                    st.success("Joined as a player. Switch to the Join tab to play.")
+                except Exception as e:
+                    st.error(f"Could not join: {e}")
+
 
         code_existing = st.text_input("Or manage existing room code", value=st.session_state.get("host_room_code", ""))
         if code_existing and room_exists(code_existing):
