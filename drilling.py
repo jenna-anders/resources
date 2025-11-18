@@ -52,6 +52,21 @@ def get_conn():
     return conn
 
 
+
+
+def ensure_players_has_is_host():
+    """Ensure players table has is_host column (idempotent)."""
+    with get_conn() as conn:
+        cur = conn.cursor()
+        try:
+            cur.execute("PRAGMA table_info(players);")
+            cols = [row[1] for row in cur.fetchall()]
+            if "is_host" not in cols:
+                cur.execute("ALTER TABLE players ADD COLUMN is_host INTEGER DEFAULT 0;")
+                conn.commit()
+        except Exception:
+            # If table doesn't exist yet, init_db() will create it with default schema; call again later.
+            pass
 def init_db():
     """Create tables if they don't exist."""
     with get_conn() as conn:
@@ -221,6 +236,7 @@ def list_players(code: str) -> List[Dict]:
                 "cumulative_profit": r[3],
                 "joined_at": r[4],
                 "last_active": r[5],
+                "is_host": int(r[6]) if len(r) > 6 else 0,
                 "is_host": int(r[6]),
             }
             for r in cur.fetchall()
@@ -553,6 +569,7 @@ def stage_a_solo():
 
 
 def stage_b_multiplayer():
+    ensure_players_has_is_host()
     st.subheader("Stage B — Common Pool (Multiplayer)")
     st.caption("Up to 6 students share one aquifer. Each controls one well. Highest cumulative profit wins.")
 
@@ -843,6 +860,7 @@ def stage_b_multiplayer():
                 st.warning("Room not found. Create a new room above.")
 
 def main():
+    ensure_players_has_is_host()
     st.title("Groundwater Commons Game")
     st.caption("You are a farmer pumping groundwater to irrigate your crops. Pumping water lowers the water level, which makes pumping slightly more expensive. Meanwhile, the aquifer naturally replenishes at some rate.")
 
