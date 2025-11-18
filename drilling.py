@@ -435,7 +435,7 @@ def stage_a_solo():
 
     # Baseline defaults
     defaults = {
-        "S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 8, "qmax": 80.0,
+        "S0": 1400.0, "Smax": 1400.0, "R": 60.0, "T": 8, "qmax": 80.0,
         "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.006,
     }
 
@@ -528,7 +528,7 @@ def stage_b_multiplayer():
     st.caption("Up to 6 students share one aquifer. Each controls one well. Highest cumulative profit wins.")
 
     # Defaults mirror Solo
-    defaults = {"S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 8, "qmax": 80.0, "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.006}
+    defaults = {"S0": 1400.0, "Smax": 1400.0, "R": 60.0, "T": 8, "qmax": 80.0, "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.006}
 
     # Make "Join as Player" the DEFAULT tab by listing it first
     tab_player, tab_host = st.tabs(["Join as Player", "Host a Room"])
