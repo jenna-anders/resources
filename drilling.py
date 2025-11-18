@@ -741,7 +741,7 @@ setTimeout(function(){window.parent.location.reload();}, 1200);
 # ------------------------------
 
 def main():
-    st.title("LPPP3559/5559 Groundwater Commons Game")
+    st.title("Groundwater Commons Game")
     st.caption("You are a farmer pumping groundwater to irrigate your crops. Pumping water lowers the water level, which makes pumping slightly more expensive. Meanwhile, the aquifer naturally replenishes at some rate.")
 
     with st.sidebar:
@@ -752,8 +752,10 @@ def main():
             "\n- Score: simple cumulative profit."
         )
         st.markdown("---")
-        st.markdown("**Instructor tip:** Run Stage A first, then a Stage B room. Keep parameters fixed to compare behavior.")
-
+        st.markdown("Created by Jenna Anders, University of Virginia")
+        st.markdown("---")
+        st.markdown("Instructions: Run Stage A first, then a Stage B room. Keep parameters fixed to compare behavior.")
+    
     tab_a, tab_b = st.tabs(["Stage A (Solo)", "Stage B (Multiplayer)"])
     with tab_a:
         stage_a_solo()
