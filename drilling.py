@@ -52,21 +52,6 @@ def get_conn():
     return conn
 
 
-
-
-def ensure_players_has_is_host():
-    """Ensure players table has is_host column (idempotent)."""
-    with get_conn() as conn:
-        cur = conn.cursor()
-        try:
-            cur.execute("PRAGMA table_info(players);")
-            cols = [row[1] for row in cur.fetchall()]
-            if "is_host" not in cols:
-                cur.execute("ALTER TABLE players ADD COLUMN is_host INTEGER DEFAULT 0;")
-                conn.commit()
-        except Exception:
-            # If table doesn't exist yet, init_db() will create it with default schema; call again later.
-            pass
 def init_db():
     """Create tables if they don't exist."""
     with get_conn() as conn:
@@ -225,7 +210,7 @@ def list_players(code: str) -> List[Dict]:
     with get_conn() as conn:
         cur = conn.cursor()
         cur.execute(
-            "SELECT player_id, name, well_index, cumulative_profit, joined_at, last_active, COALESCE(is_host,0) FROM players WHERE room_code=? ORDER BY well_index ASC",
+            "SELECT player_id, name, well_index, cumulative_profit, joined_at, last_active FROM players WHERE room_code=? ORDER BY well_index ASC",
             (code,),
         )
         return [
@@ -236,14 +221,12 @@ def list_players(code: str) -> List[Dict]:
                 "cumulative_profit": r[3],
                 "joined_at": r[4],
                 "last_active": r[5],
-                "is_host": int(r[6]) if len(r) > 6 else 0,
-                "is_host": int(r[6]),
             }
             for r in cur.fetchall()
         ]
 
 
-def add_or_get_player(code: str, name: str, make_host: bool=False) -> Dict:
+def add_or_get_player(code: str, name: str) -> Dict:
     """Join a room; if name already exists, reuse it; else allocate next well index within capacity."""
     with get_conn() as conn:
         cur = conn.cursor()
@@ -265,8 +248,8 @@ def add_or_get_player(code: str, name: str, make_host: bool=False) -> Dict:
             pid = str(uuid.uuid4())
             now = datetime.utcnow().isoformat()
             cur.execute(
-                "INSERT INTO players(player_id, room_code, name, well_index, cumulative_profit, joined_at, last_active, is_host) VALUES(?,?,?,?,?,?,?,?)",
-                (pid, code, name, win, 0.0, now, now, 1 if (make_host and not is_room_host_assigned(code)) else 0),
+                "INSERT INTO players(player_id, room_code, name, well_index, cumulative_profit, joined_at, last_active) VALUES(?,?,?,?,?,?,?)",
+                (pid, code, name, win, 0.0, now, now),
             )
             conn.commit()
             cum = 0.0
@@ -404,33 +387,6 @@ def maybe_advance_round(code: str):
 # UI helpers
 # ------------------------------
 
-
-def get_player(player_id: str):
-    with get_conn() as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT player_id, room_code, name, well_index, cumulative_profit, joined_at, last_active, COALESCE(is_host,0) FROM players WHERE player_id=?", (player_id,))
-        row = cur.fetchone()
-        if not row:
-            return None
-        return {"player_id": row[0], "room_code": row[1], "name": row[2], "well_index": row[3], "cumulative_profit": row[4], "joined_at": row[5], "last_active": row[6], "is_host": int(row[7])}
-
-def is_room_host_assigned(code: str) -> bool:
-    with get_conn() as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT 1 FROM players WHERE room_code=? AND COALESCE(is_host,0)=1 LIMIT 1", (code,))
-        return cur.fetchone() is not None
-
-def set_player_host(code: str, player_id: str) -> bool:
-    """Promote a player to host if room has no host yet. Returns True on success."""
-    with get_conn() as conn:
-        cur = conn.cursor()
-        cur.execute("SELECT 1 FROM players WHERE room_code=? AND COALESCE(is_host,0)=1 LIMIT 1", (code,))
-        if cur.fetchone():
-            return False
-        cur.execute("UPDATE players SET is_host=1 WHERE player_id=? AND room_code=?", (player_id, code))
-        conn.commit()
-        return cur.rowcount > 0
-
 def nice_metric(label: str, value: str, help_text: Optional[str] = None):
     with st.container(border=True):
         st.markdown(f"**{label}**")
@@ -479,7 +435,7 @@ def stage_a_solo():
 
     # Baseline defaults
     defaults = {
-        "S0": 1400.0, "Smax": 1400.0, "R": 60.0, "T": 8, "qmax": 80.0,
+        "S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 8, "qmax": 80.0,
         "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.006,
     }
 
@@ -567,18 +523,17 @@ def stage_a_solo():
 # Stage B: Multiplayer (common pool)
 # ------------------------------
 
-
 def stage_b_multiplayer():
-    ensure_players_has_is_host()
     st.subheader("Stage B — Common Pool (Multiplayer)")
     st.caption("Up to 6 students share one aquifer. Each controls one well. Highest cumulative profit wins.")
 
-    # Defaults (kept from original behavior where possible)
-    defaults = {"S0": 1400.0, "Smax": 1400.0, "R": 60.0, "T": 8, "qmax": 80.0, "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.006}
+    # Defaults mirror Solo
+    defaults = {"S0": 1000.0, "Smax": 1000.0, "R": 60.0, "T": 8, "qmax": 80.0, "P": 10.0, "gamma": 0.08, "c0": 2.0, "c1": 0.006}
 
+    # Make "Join as Player" the DEFAULT tab by listing it first
     tab_player, tab_host = st.tabs(["Join as Player", "Host a Room"])
 
-    # ---- Player tab ----
+    # ---- Player tab (default visible) ----
     with tab_player:
         st.markdown("#### Join a Room")
         with st.form("join_form"):
@@ -618,25 +573,6 @@ def stage_b_multiplayer():
 
             if state["status"] == "lobby":
                 st.info("Waiting for host to start the game.")
-            # Host mini-panel: show host controls inline if this player is host
-            me = get_player(pid)
-            am_host = bool(me and int(me.get("is_host", 0)) == 1)
-
-            if state["status"] == "lobby":
-                if am_host:
-                    st.success("You are the HOST for this room. You can start the game when ready.")
-                    if st.button("Start Game (host)", key="player_host_start"):
-                        state["status"] = "running"
-                        save_room_state(code, state)
-                        st.rerun()
-                else:
-                    if not is_room_host_assigned(code) and st.button("Claim Host Role for this Room", key="player_claim_host"):
-                        if set_player_host(code, pid):
-                            st.success("You are now the host for this room.")
-                        else:
-                            st.warning("Host already assigned.")
-                        st.rerun()
-
                 if st.button("Refresh"):
                     st.rerun()
                 return
@@ -645,31 +581,12 @@ def stage_b_multiplayer():
                 st.success("Game finished. See leaderboard on the Host tab.")
                 return
 
-
-            if am_host and state["status"] == "running":
-                st.markdown("##### Host Controls (inline)")
-                cA, cB = st.columns(2)
-                with cA:
-                    if st.button("Force Advance (host override)", key="player_host_force_adv"):
-                        acts = fetch_actions(code, state["current_round"])
-                        submitted_pids = {a["player_id"] for a in acts if a["submitted"]}
-                        joined = list_players(code)
-                        for pz in joined:
-                            if pz["player_id"] not in submitted_pids:
-                                upsert_action(code, state["current_round"], pz["player_id"], 0.0, submitted=True, profit_val=0.0)
-                        maybe_advance_round(code)
-                        st.rerun()
-                with cB:
-                    if st.button("End Game Now (host)", key="player_host_end"):
-                        state["status"] = "finished"
-                        save_room_state(code, state)
-                        st.rerun()
-            # --- Decision ---
+            # --- Decision first so metrics show current profit ---
             acts = fetch_actions(code, state["current_round"])  # my row may or may not exist
             my_act = next((a for a in acts if a["player_id"] == pid), None)
             already_submitted = bool(my_act and my_act["submitted"])
 
-            # Light client auto-refresh while waiting (faster auto-advance)
+            # Auto-refresh to speed auto-advance when waiting for others
             capacity_now = get_room_capacity(code)
             joined_players = list_players(code)
             n_players_now = min(len(joined_players), capacity_now)
@@ -677,7 +594,14 @@ def stage_b_multiplayer():
             joined_ids_now = {p["player_id"] for p in joined_players[:capacity_now]}
             submitted_count = sum(1 for a in acts_now if a["submitted"] and a["player_id"] in joined_ids_now)
             if state["status"] == "running" and submitted_count < n_players_now:
-                components.html("<script>setTimeout(function(){window.parent.location.reload();}, 1200);</script>", height=0)
+                # Light-weight client reload every ~1.2s while waiting
+                components.html("""
+<script>
+setTimeout(function(){window.parent.location.reload();}, 1200);
+</script>
+""", height=0)
+
+
 
             qmax = float(params.get("qmax", 80.0))
             q_val = my_act["q"] if my_act else min(40.0, qmax)
@@ -685,6 +609,7 @@ def stage_b_multiplayer():
 
             pi_preview = profit_one_period(q, rr["S"], params)
 
+            # --- Metrics with PROFIT front and center ---
             cols = st.columns(4)
             with cols[0]:
                 nice_metric("Status", state["status"].upper())
@@ -695,8 +620,10 @@ def stage_b_multiplayer():
             with cols[3]:
                 nice_metric("Max q", f"{params.get('qmax',80.0):.0f}")
 
+            # --- Aquifer gauge (no numbers for players) ---
             stock_gauge(rr["S"], params["Smax"], label="Aquifer stock")
 
+            # Submit decision
             colb1, colb2, colb3 = st.columns([1,1,1])
             with colb1:
                 if st.button("Finalize Pumping Decision", disabled=already_submitted):
@@ -722,79 +649,30 @@ def stage_b_multiplayer():
             if my_row:
                 st.success(f"Your cumulative profit: {my_row['cumulative_profit']:.1f}")
 
-    # ---- Host tab ----
+    # ---- Host tab (second) ----
     with tab_host:
         st.markdown("#### Host Controls")
-
-        # --- Collapsed parameter inputs (NO form) ---
-        # Store values directly in session_state so the Create Room button can live outside
-        host_defaults = {
-            "host_S0": 1400.0, "host_R": 60.0, "host_T": 8, "host_qmax": 80.0,
-            "host_P": 10.0, "host_gamma": 0.08, "host_c0": 2.0, "host_c1": 0.006, "host_capacity": 6
-        }
-        for k, v in host_defaults.items():
-            st.session_state.setdefault(k, v)
-
         with st.expander("Room setup (optional)", expanded=False):
-            c1, c2, c3 = st.columns(3)
-            with c1:
-                st.number_input("Initial stock S0", min_value=0.0, key="host_S0")
-                st.number_input("Recharge R per round", min_value=0.0, key="host_R")
-                st.number_input("Number of rounds T", min_value=1, step=1, key="host_T")
-            with c2:
-                st.number_input("Max q per player", min_value=0.0, key="host_qmax")
-                st.number_input("Price P", min_value=0.0, key="host_P")
-                st.selectbox("Players per room", [6, 5, 4], index=[6,5,4].index(st.session_state["host_capacity"]), key="host_capacity")
-            with c3:
-                st.number_input("Diminishing returns γ", min_value=0.0, key="host_gamma")
-                st.number_input("Base pumping cost c0", min_value=0.0, key="host_c0")
-                st.number_input("Depth cost slope c1", min_value=0.0, step=0.001, format="%.3f", key="host_c1")
-
-        # --- Create Room button OUTSIDE the expander ---
-        colA, colB = st.columns([1,1])
-        with colA:
-            if st.button("Create Room", type="primary", key="host_create_room_btn"):
-                new_params = {
-                    "S0": float(st.session_state["host_S0"]),
-                    "Smax": float(st.session_state["host_S0"]),
-                    "R": float(st.session_state["host_R"]),
-                    "T": int(st.session_state["host_T"]),
-                    "qmax": float(st.session_state["host_qmax"]),
-                    "P": float(st.session_state["host_P"]),
-                    "gamma": float(st.session_state["host_gamma"]),
-                    "c0": float(st.session_state["host_c0"]),
-                    "c1": float(st.session_state["host_c1"]),
-                    "players_expected": int(st.session_state["host_capacity"]),
-                }
-                code = create_room(new_params)
-                st.session_state["host_room_code"] = code
-                st.session_state["just_created_code"] = code
-                st.success(f"Room created. Code: **{code}**")
-                st.info("Share this code. Use the join box below if you'd like to play in this room.")
-
-        with colB:
-            # Optional immediate join after creation: works on any existing code in the input below
-            pass
-
-        # --- Host join fix: allow host to join and appear in lobby ---
-        code_existing = st.text_input("Manage / Join room code", value=st.session_state.get("host_room_code", st.session_state.get("just_created_code", "")), key="host_manage_code")
-        join_name = st.text_input("Join this room as (display name)", value="Host", key="host_join_name")
-        if st.button("Join as Player in this Room", key="host_join_btn"):
-            if not code_existing or not room_exists(code_existing):
-                st.error("Room not found. Create or enter a valid code.")
-            else:
+            new_params = room_params_form(defaults)
+        if new_params:
+            code = create_room(new_params)
+            st.success(f"Room created. Code: **{code}**")
+            st.info("Share this code. Click 'Start Game' when ready.")
+            st.session_state["host_room_code"] = code
+            join_name = st.text_input("Join this room as (optional display name)", value="Host")
+            if st.button("Join as Player in this Room"):
                 try:
-                    player = add_or_get_player(code_existing, (join_name.strip() or "Host"), make_host=True)
-                    # Persist session so the Host also sees the player console on the Join tab
-                    st.session_state["room_code"] = code_existing
+                    player = add_or_get_player(code, (join_name.strip() or "Host"))
+                    st.session_state["room_code"] = code
                     st.session_state["player_id"] = player["player_id"]
                     st.session_state["player_name"] = join_name.strip() or "Host"
                     st.session_state["well_index"] = player["well_index"]
-                    st.success(f"Joined room {code_existing} as {join_name.strip() or 'Host'} (Well #{player['well_index']+1}).")
+                    st.success("Joined as a player. Switch to the Join tab to play.")
                 except Exception as e:
                     st.error(f"Could not join: {e}")
 
-        # --- Room dashboard for host ---
+
+        code_existing = st.text_input("Or manage existing room code", value=st.session_state.get("host_room_code", ""))
         if code_existing and room_exists(code_existing):
             params, state = load_room(code_existing)
             players = list_players(code_existing)
@@ -808,41 +686,40 @@ def stage_b_multiplayer():
             with cols[2]:
                 nice_metric("Players joined", f"{len(players)}/{capacity}")
             with cols[3]:
-                rr = get_round_row(code_existing, state["current_round"])
+                rr = get_round_row(code_existing, state["current_round"])  # S at start of this round
                 nice_metric("Aquifer S (host)", f"{rr['S']:.1f}")
 
+            # Host can keep numeric S; players won't see numbers.
             st.progress(min(1.0, rr["S"] / params["Smax"]))
 
             if state["status"] == "lobby":
                 st.write("**Players in lobby**:")
                 st.table([{k: p[k] for k in ("name", "well_index", "cumulative_profit")} for p in players])
-                if len(players) > 0 and st.button("Start Game", key="host_start_btn"):
+                if len(players) > 0 and st.button("Start Game"):
                     state["status"] = "running"
                     save_room_state(code_existing, state)
                     st.rerun()
 
             elif state["status"] == "running":
                 st.write("**Game is running.** It advances automatically once all players submit.")
-                cA, cB = st.columns(2)
-                with cA:
-                    if st.button("Force Advance (host override)", key="host_force_adv"):
-                        acts = fetch_actions(code_existing, state["current_round"])
-                        submitted_pids = {a["player_id"] for a in acts if a["submitted"]}
-                        joined = list_players(code_existing)
-                        for p in joined:
-                            if p["player_id"] not in submitted_pids:
-                                upsert_action(code_existing, state["current_round"], p["player_id"], 0.0, submitted=True, profit_val=0.0)
-                        maybe_advance_round(code_existing)
-                        st.rerun()
-                with cB:
-                    if st.button("End Game Now", key="host_end_now"):
-                        state["status"] = "finished"
-                        save_room_state(code_existing, state)
-                        st.rerun()
+                if st.button("Force Advance (host override)"):
+                    acts = fetch_actions(code_existing, state["current_round"])
+                    submitted_pids = {a["player_id"] for a in acts if a["submitted"]}
+                    joined = list_players(code_existing)
+                    for p in joined:
+                        if p["player_id"] not in submitted_pids:
+                            upsert_action(code_existing, state["current_round"], p["player_id"], 0.0, submitted=True, profit_val=0.0)
+                    maybe_advance_round(code_existing)
+                    st.rerun()
+                if st.button("End Game Now"):
+                    state["status"] = "finished"
+                    save_room_state(code_existing, state)
+                    st.rerun()
 
             elif state["status"] == "finished":
                 st.success("Game finished.")
 
+            # Leaderboard
             st.markdown("### Leaderboard (cumulative profits)")
             players_sorted = sorted(players, key=lambda p: p["cumulative_profit"], reverse=True)
             st.table([{ "Rank": i+1, "Player": p["name"], "Score": round(p["cumulative_profit"], 1)} for i, p in enumerate(players_sorted)])
@@ -852,16 +729,19 @@ def stage_b_multiplayer():
             st.markdown("#### Last resolved round summary")
             st.write({"round": last_t, "S": rr_last["S"], "group_q": rr_last["group_q"]})
 
-            if st.button("Refresh status", key="host_refresh_status"):
+            if st.button("Refresh status"):
                 maybe_advance_round(code_existing)
                 st.rerun()
         else:
             if code_existing:
                 st.warning("Room not found. Create a new room above.")
 
+# ------------------------------
+# Main App
+# ------------------------------
+
 def main():
-    ensure_players_has_is_host()
-    st.title("Groundwater Commons Game")
+    st.title("LPPP3559/5559 Groundwater Commons Game")
     st.caption("You are a farmer pumping groundwater to irrigate your crops. Pumping water lowers the water level, which makes pumping slightly more expensive. Meanwhile, the aquifer naturally replenishes at some rate.")
 
     with st.sidebar:
@@ -872,10 +752,8 @@ def main():
             "\n- Score: simple cumulative profit."
         )
         st.markdown("---")
-        st.markdown("Created by Jenna Anders, University of Virginia")
-        st.markdown("---")
-        st.markdown("Instructions: Run Stage A first, then a Stage B room. Keep parameters fixed to compare behavior.")
-    
+        st.markdown("**Instructor tip:** Run Stage A first, then a Stage B room. Keep parameters fixed to compare behavior.")
+
     tab_a, tab_b = st.tabs(["Stage A (Solo)", "Stage B (Multiplayer)"])
     with tab_a:
         stage_a_solo()
