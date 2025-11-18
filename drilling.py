@@ -639,17 +639,27 @@ def stage_b_multiplayer():
     with tab_host:
         st.markdown("#### Host Controls")
         
-        # Host creation with auto-join
+        # Parameter form in expander (must come before form to avoid rendering issues)
+        new_params = room_params_form(defaults)
+        if new_params:
+            # User submitted custom parameters
+            code = create_room(new_params)
+            st.session_state["host_room_code"] = code
+            st.success(f"Room created with custom parameters: **{code}**")
+            st.info("Share this code. Use the management section below to join as a player and start the game.")
+            st.rerun()
+        
+        # Quick create with defaults
         with st.form("host_create_form"):
+            st.markdown("**Quick create:** Use default parameters and join as player immediately")
             host_name = st.text_input("Your name (as player)", value="Host")
-            create_clicked = st.form_submit_button("Create Room & Join as Player")
+            create_clicked = st.form_submit_button("Create Room & Join as Player (defaults)")
         
         if create_clicked:
-            new_params = room_params_form(defaults)
-            if not new_params:
-                new_params = defaults.copy()
-                new_params["players_expected"] = 6
-            code = create_room(new_params)
+            # Use defaults directly, don't try to render another form
+            params_to_use = defaults.copy()
+            params_to_use["players_expected"] = 6
+            code = create_room(params_to_use)
             # Auto-add host as player
             player = add_or_get_player(code, host_name.strip() or "Host")
             st.session_state["host_room_code"] = code
@@ -657,12 +667,7 @@ def stage_b_multiplayer():
             st.session_state["player_id"] = player["player_id"]
             st.session_state["player_name"] = host_name
             st.session_state["well_index"] = player["well_index"]
-            st.success(f"Room created: **{code}**. You joined as Well #{player['well_index']+1}.")
-            st.info("Share this code with other students. Click 'Start Game' when ready.")
             st.rerun()
-        
-        # Parameter form in expander
-        new_params = room_params_form(defaults)
         
         # Existing room management
         code_existing = st.text_input("Or manage existing room code", value=st.session_state.get("host_room_code", ""))
