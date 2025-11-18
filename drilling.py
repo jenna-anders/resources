@@ -639,40 +639,65 @@ def stage_b_multiplayer():
     with tab_host:
         st.markdown("#### Host Controls")
         
-        # Parameter form in expander (must come before form to avoid rendering issues)
-        new_params = room_params_form(defaults)
-        if new_params:
-            # User submitted custom parameters
-            code = create_room(new_params)
-            st.session_state["host_room_code"] = code
-            st.success(f"Room created with custom parameters: **{code}**")
-            st.info("Share this code. Use the management section below to join as a player and start the game.")
-            st.rerun()
+        # Check if we should show room management (host has active room)
+        code_existing = st.session_state.get("host_room_code", "")
+        show_management = code_existing and room_exists(code_existing)
         
-        # Quick create with defaults
-        with st.form("host_create_form"):
-            st.markdown("**Quick create:** Use default parameters and join as player immediately")
-            host_name = st.text_input("Your name (as player)", value="Host")
-            create_clicked = st.form_submit_button("Create Room & Join as Player (defaults)")
+        # Only show creation forms if not managing a room
+        if not show_management:
+            # Parameter form in expander
+            new_params = room_params_form(defaults)
+            if new_params:
+                # User submitted custom parameters
+                code = create_room(new_params)
+                st.session_state["host_room_code"] = code
+                st.success(f"Room created with custom parameters: **{code}**")
+                st.info("Share this code. Use the management section below to join as a player and start the game.")
+                st.rerun()
+            
+            # Quick create with defaults
+            with st.form("host_create_form"):
+                st.markdown("**Quick create:** Use default parameters and join as player immediately")
+                host_name = st.text_input("Your name (as player)", value="Host")
+                create_clicked = st.form_submit_button("Create Room & Join as Player (defaults)")
+            
+            if create_clicked:
+                # Use defaults directly, don't try to render another form
+                params_to_use = defaults.copy()
+                params_to_use["players_expected"] = 6
+                code = create_room(params_to_use)
+                # Auto-add host as player
+                player = add_or_get_player(code, host_name.strip() or "Host")
+                st.session_state["host_room_code"] = code
+                st.session_state["room_code"] = code
+                st.session_state["player_id"] = player["player_id"]
+                st.session_state["player_name"] = host_name
+                st.session_state["well_index"] = player["well_index"]
+                st.rerun()
+            
+            # Manual room code entry
+            st.markdown("---")
+            manual_code = st.text_input("Or enter existing room code to manage")
+            if st.button("Load Room") and manual_code:
+                if room_exists(manual_code):
+                    st.session_state["host_room_code"] = manual_code
+                    st.rerun()
+                else:
+                    st.error("Room not found")
         
-        if create_clicked:
-            # Use defaults directly, don't try to render another form
-            params_to_use = defaults.copy()
-            params_to_use["players_expected"] = 6
-            code = create_room(params_to_use)
-            # Auto-add host as player
-            player = add_or_get_player(code, host_name.strip() or "Host")
-            st.session_state["host_room_code"] = code
-            st.session_state["room_code"] = code
-            st.session_state["player_id"] = player["player_id"]
-            st.session_state["player_name"] = host_name
-            st.session_state["well_index"] = player["well_index"]
-            st.rerun()
-        
-        # Existing room management
-        code_existing = st.text_input("Or manage existing room code", value=st.session_state.get("host_room_code", ""))
-        
-        if code_existing and room_exists(code_existing):
+        # Room management section
+        if show_management:
+            st.success(f"Managing room: **{code_existing}**")
+            if st.button("← Create New Room (leave this room)"):
+                st.session_state.pop("host_room_code", None)
+                st.session_state.pop("room_code", None)
+                st.session_state.pop("player_id", None)
+                st.session_state.pop("player_name", None)
+                st.session_state.pop("well_index", None)
+                st.rerun()
+            
+            st.markdown("---")
+            
             params, state = load_room(code_existing)
             players = list_players(code_existing)
             capacity = get_room_capacity(code_existing)
@@ -791,9 +816,6 @@ def stage_b_multiplayer():
                     if st.button("Update (not final)", disabled=already_submitted, key="host_update"):
                         upsert_action(code_existing, state["current_round"], pid, q, submitted=False)
                         st.success("Saved draft.")
-        else:
-            if code_existing:
-                st.warning("Room not found. Create a new room above.")
 
 # ------------------------------
 # Main App
