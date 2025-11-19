@@ -459,6 +459,165 @@ def api_end_game():
     socketio.emit('game_ended', {}, room=code)
     return jsonify({"success": True})
 
+
+
+# ---------- SOLO MODE ----------
+from flask import session
+
+def _solo_defaults():
+    # Reasonable defaults; feel free to tweak to match your class
+    return {
+        "P": 100.0,
+        "gamma": 0.5,
+        "c0": 5.0,
+        "c1": 0.006,
+        "S0": 1000.0,
+        "Smax": 1000.0,
+        "R": 50.0,
+        "qmax": 80.0,
+        "T": 8,
+        "wells": 6   # number of wells the solo player "owns"
+    }
+
+def _solo_state():
+    return session.setdefault("solo_state", None)
+
+def _solo_save(state):
+    session["solo_state"] = state
+
+def _solo_profit_per_well(q, P, c0, c1):
+    # Keep this consistent with your classroom payoff (simple quadratic costs)
+    # If your multiplayer uses a different profit function, swap it in here.
+    return max(0.0, P*q - c0*q - c1*(q**2))
+
+def _solo_next_S(S, R, total_q, gamma, Smax):
+    # Stock update, similar to many CPR models: S' = S + R - (Σq)^gamma
+    # Clamp to [0, Smax]
+    use = (total_q ** gamma) if gamma is not None else total_q
+    s1 = S + R - use
+    return max(0.0, min(Smax, s1))
+
+@app.route("/solo")
+def solo_page():
+    # Renders the solo UI
+    return render_template("solo.html")
+
+@app.route("/api/solo/create", methods=["POST"])
+def solo_create():
+    data = request.get_json(force=True, silent=True) or {}
+    params = _solo_defaults()
+    params.update({
+        k: type(params[k])(data[k]) for k in params.keys() if k in data
+    })
+
+    state = {
+        "params": params,
+        "round": 1,
+        "S": float(params["S0"]),
+        "cumulative_profit": 0.0,
+        "last_profit": None,
+        "submitted": False  # whether current round has a submitted q
+    }
+    _solo_save(state)
+    return jsonify({"ok": True, "state": {
+        "round": state["round"],
+        "S": state["S"],
+        "cumulative_profit": state["cumulative_profit"],
+        "submitted": state["submitted"],
+        "params": params
+    }})
+
+@app.route("/api/solo/state", methods=["GET"])
+def solo_state():
+    st = _solo_state()
+    if not st:
+        # Create one with defaults if none exists yet
+        params = _solo_defaults()
+        st = {
+            "params": params,
+            "round": 1,
+            "S": float(params["S0"]),
+            "cumulative_profit": 0.0,
+            "last_profit": None,
+            "submitted": False
+        }
+        _solo_save(st)
+
+    p = st["params"]
+    return jsonify({
+        "round": st["round"],
+        "S": st["S"],
+        "Smax": p["Smax"],
+        "qmax": p["qmax"],
+        "wells": p["wells"],
+        "T": p["T"],
+        "submitted": st["submitted"],
+        "last_profit": st["last_profit"],
+        "cumulative_profit": st["cumulative_profit"],
+        "params": p
+    })
+
+@app.route("/api/solo/submit", methods=["POST"])
+def solo_submit():
+    st = _solo_state()
+    if not st:
+        return jsonify({"error": "No solo session"}), 400
+    data = request.get_json(force=True, silent=True) or {}
+    try:
+        q = float(data.get("q", 0))
+    except (TypeError, ValueError):
+        return jsonify({"error": "Invalid q"}), 400
+
+    p = st["params"]
+    S = st["S"]
+    wells = int(p["wells"])
+    q = max(0.0, min(float(p["qmax"]), q))  # clamp
+    total_q = wells * q
+
+    # Profit: per-well, then multiply by wells
+    per_profit = _solo_profit_per_well(q, p["P"], p["c0"], p["c1"])
+    total_profit = wells * per_profit
+
+    # Update stock and advance round
+    S1 = _solo_next_S(S, p["R"], total_q, p["gamma"], p["Smax"])
+
+    st["cumulative_profit"] += total_profit
+    st["last_profit"] = total_profit
+    st["S"] = S1
+    st["submitted"] = True  # prevent resubmission in same round
+
+    _solo_save(st)
+    return jsonify({
+        "ok": True,
+        "round": st["round"],
+        "S": S1,
+        "last_profit": total_profit,
+        "cumulative_profit": st["cumulative_profit"]
+    })
+
+@app.route("/api/solo/next", methods=["POST"])
+def solo_next():
+    st = _solo_state()
+    if not st:
+        return jsonify({"error": "No solo session"}), 400
+    st["submitted"] = False
+    st["round"] += 1
+    if st["round"] > st["params"]["T"]:
+        # End of game; you could lock UI or let them keep exploring
+        st["round"] = st["params"]["T"]
+        st["submitted"] = True
+    _solo_save(st)
+    return jsonify({"ok": True, "round": st["round"], "submitted": st["submitted"]})
+
+@app.route("/api/solo/reset", methods=["POST"])
+def solo_reset():
+    session.pop("solo_state", None)
+    return jsonify({"ok": True})
+# ---------- END SOLO MODE ----------
+
+
+
+
 # ------------------------------
 # Socket.io events
 # ------------------------------

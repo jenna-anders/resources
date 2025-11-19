@@ -1,0 +1,136 @@
+<!doctype html>
+<html>
+<head>
+  <meta charset="utf-8"/>
+  <meta name="viewport" content="width=device-width, initial-scale=1"/>
+  <title>Groundwater Commons — Solo</title>
+  <style>
+    body { font-family: system-ui, sans-serif; max-width: 900px; margin: 24px auto; padding: 0 12px; }
+    fieldset { border: 1px solid #ddd; border-radius: 10px; margin: 14px 0; padding: 14px; }
+    legend { padding: 0 8px; font-weight: 600; }
+    .row { display: flex; gap: 10px; align-items: center; flex-wrap: wrap; }
+    input, button { padding: 8px 10px; border-radius: 8px; border: 1px solid #ddd; }
+    button { background: #111; color: #fff; cursor: pointer; }
+    .mono { font-family: ui-monospace, SFMono-Regular, Menlo, Consolas, monospace; }
+    .metrics { display: grid; grid-template-columns: repeat(auto-fit, minmax(140px,1fr)); gap: 8px; }
+    .metric { background: #f7f7f8; border-radius: 8px; padding: 8px; }
+    .metric b { display: block; font-size: 12px; color: #555; }
+    .metric span { font-size: 18px; }
+    .muted { color: #666; }
+  </style>
+</head>
+<body>
+  <h1>Solo Aquifer</h1>
+  <p class="muted">You own all wells. Choose a single per-well extraction rate; it applies to all wells you own.</p>
+
+  <div class="metrics">
+    <div class="metric"><b>Round</b><span id="m-round">—</span></div>
+    <div class="metric"><b>Stock S</b><span id="m-s">—</span></div>
+    <div class="metric"><b>Wells owned</b><span id="m-wells">—</span></div>
+    <div class="metric"><b>q<sub>per well</sub></b><span id="m-q">—</span></div>
+    <div class="metric"><b>Total Q</b><span id="m-Q">—</span></div>
+    <div class="metric"><b>Cumulative profit</b><span id="m-cum">—</span></div>
+    <div class="metric"><b>Last round profit</b><span id="m-last">—</span></div>
+  </div>
+
+  <fieldset>
+    <legend>Parameters</legend>
+    <div class="row">
+      <label>P <input id="P" type="number" step="1" value="100"></label>
+      <label>γ <input id="gamma" type="number" step="0.1" value="0.5"></label>
+      <label>c0 <input id="c0" type="number" step="0.5" value="5"></label>
+      <label>c1 <input id="c1" type="number" step="0.001" value="0.006"></label>
+      <label>S0 <input id="S0" type="number" step="10" value="1000"></label>
+      <label>Smax <input id="Smax" type="number" step="10" value="1000"></label>
+      <label>R <input id="R" type="number" step="1" value="50"></label>
+      <label>qmax <input id="qmax" type="number" step="1" value="80"></label>
+      <label>T <input id="T" type="number" step="1" value="8"></label>
+      <label>Wells <input id="wells" type="number" step="1" value="6" min="1" max="24"></label>
+      <button id="start">Start / Restart</button>
+      <button id="reset" class="muted">Reset only</button>
+    </div>
+  </fieldset>
+
+  <fieldset>
+    <legend>Choose per-well extraction q</legend>
+    <div class="row" style="align-items: center;">
+      <input id="q" type="range" min="0" max="80" value="40" step="1" style="flex:1">
+      <span class="mono">q = <span id="q-val">40</span></span>
+      <button id="submit">Submit</button>
+      <button id="next">Next round</button>
+    </div>
+  </fieldset>
+
+  <script>
+    const $ = id => document.getElementById(id);
+
+    async function post(path, body) {
+      const r = await fetch(path, { method: 'POST', headers: {'Content-Type':'application/json'}, body: JSON.stringify(body||{}) });
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    }
+    async function get(path) {
+      const r = await fetch(path);
+      if (!r.ok) throw new Error(await r.text());
+      return r.json();
+    }
+
+    function applyState(s) {
+      $('m-round').textContent = s.round;
+      $('m-s').textContent = s.S.toFixed(1);
+      $('m-wells').textContent = s.wells;
+      $('m-cum').textContent = s.cumulative_profit.toFixed(1);
+      $('m-last').textContent = s.last_profit == null ? '—' : s.last_profit.toFixed(1);
+      $('q').max = s.qmax;
+      $('q-val').textContent = $('q').value;
+      $('m-q').textContent = $('q').value;
+      $('m-Q').textContent = (s.wells * Number($('q').value)).toFixed(1);
+      $('submit').disabled = s.submitted;
+      $('next').disabled = !s.submitted || (s.round >= s.T);
+    }
+
+    async function refresh() {
+      const s = await get('/api/solo/state');
+      applyState(s);
+    }
+
+    $('q').addEventListener('input', () => {
+      $('q-val').textContent = $('q').value;
+      $('m-q').textContent = $('q').value;
+      $('m-Q').textContent = (Number($('q').value) * Number($('m-wells').textContent)).toFixed(1);
+    });
+
+    $('start').onclick = async () => {
+      const body = {
+        P: +$('P').value, gamma: +$('gamma').value,
+        c0: +$('c0').value, c1: +$('c1').value,
+        S0: +$('S0').value, Smax: +$('Smax').value,
+        R: +$('R').value, qmax: +$('qmax').value,
+        T: +$('T').value, wells: +$('wells').value
+      };
+      await post('/api/solo/create', body);
+      $('q').value = Math.min(Number($('q').value), body.qmax);
+      await refresh();
+    };
+
+    $('reset').onclick = async () => {
+      await post('/api/solo/reset', {});
+      await refresh();
+    };
+
+    $('submit').onclick = async () => {
+      const q = +$('q').value;
+      await post('/api/solo/submit', { q });
+      await refresh();
+    };
+
+    $('next').onclick = async () => {
+      await post('/api/solo/next', {});
+      await refresh();
+    };
+
+    // initial fetch
+    refresh().catch(console.error);
+  </script>
+</body>
+</html>
