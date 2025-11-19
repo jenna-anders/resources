@@ -460,7 +460,7 @@ def healthz():
     return "ok", 200
 
 # TEMPORARY: prove the container responds
-@app.route("/")
+@app.route("/ok")
 def index():
     return "OK", 200
 
