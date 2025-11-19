@@ -472,6 +472,5 @@ def on_leave(data):
 
 if __name__ == '__main__':
     import os
-    from waitress import serve
     port = int(os.environ.get('PORT', 5000))
-    serve(app, host="0.0.0.0", port=port, allow_unsafe_werkzeug=True)
+    socketio.run(app, debug=False, host='0.0.0.0', port=port, allow_unsafe_werkzeug=True)
