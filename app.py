@@ -468,13 +468,13 @@ from flask import session, request, jsonify, render_template
 
 def _solo_defaults():
     return {
-        "P": 100.0,
-        "gamma": 0.5,
-        "c0": 5.0,
+        "P": 10.0,
+        "gamma": 0.08,
+        "c0": 2.0,
         "c1": 0.006,
-        "S0": 1000.0,
-        "Smax": 1000.0,
-        "R": 50.0,
+        "S0": 1200.0,
+        "Smax": 1200.0,
+        "R": 60.0,
         "qmax": 80.0,
         "T": 8,
         "wells": 6,
@@ -490,9 +490,9 @@ def _solo_profit_per_well(q, P, c0, c1):
     return max(0.0, P*q - c0*q - c1*(q**2))
 
 def _solo_next_S(S, R, total_q, gamma, Smax):
-    use = (total_q ** gamma) if gamma is not None else total_q
-    s1 = S + R - use
-    return max(0.0, min(Smax, s1))
+    # For solo mode, use the same stock transition as the group game:
+    # S_{t+1} = max(0, S_t + R - total_q)
+    return next_stock(S, R, total_q)
 
 # ---------- SOLO ROUTES ----------
 
