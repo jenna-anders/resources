@@ -607,17 +607,13 @@ def stage_b_multiplayer():
             stock_gauge(rr["S"], params["Smax"], label="Aquifer stock")
 
             # Submit decision
-            colb1, colb2, colb3 = st.columns([1,1,1])
+            colb1, colb2 = st.columns([1,1])
             with colb1:
                 if st.button("Finalize Pumping Decision", disabled=already_submitted):
                     upsert_action(code, state["current_round"], pid, q, submitted=True)
                     maybe_advance_round(code)  # advance if all submitted
                     st.rerun()
             with colb2:
-                if st.button("Update (not final)", disabled=already_submitted):
-                    upsert_action(code, state["current_round"], pid, q, submitted=False)
-                    st.success("Saved draft. Click Finalize when ready.")
-            with colb3:
                 if st.button("Refresh status"):
                     maybe_advance_round(code)
                     st.rerun()
