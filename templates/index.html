@@ -266,6 +266,8 @@
         const socket = io();
         let currentRoom = null;
         let playerState = null;
+        let isUserSliding = false;
+        let lastRoundSeen = 0;
 
         function switchTab(tab) {
             document.querySelectorAll('.tab').forEach(t => t.classList.remove('active'));
@@ -350,16 +352,44 @@
                 document.getElementById('player-aquifer-bar').style.width = pct + '%';
 
                 const slider = document.getElementById('player-q-slider');
-                slider.max = data.qmax;
-                if (!data.my_submitted) {
-                    slider.value = data.my_q;
-                    slider.disabled = false;
-                    document.getElementById('player-submit-btn').disabled = false;
-                } else {
-                    slider.disabled = true;
-                    document.getElementById('player-submit-btn').disabled = true;
+                // attach once
+                if (!slider._handlersBound) {
+                const startDrag = () => { isUserSliding = true; };
+                const endDrag = () => { isUserSliding = false; };
+                slider.addEventListener('mousedown', startDrag);
+                slider.addEventListener('touchstart', startDrag, {passive:true});
+                slider.addEventListener('mouseup', endDrag);
+                slider.addEventListener('touchend', endDrag);
+                slider.addEventListener('blur', endDrag);
+                slider._handlersBound = true;
                 }
-                document.getElementById('player-q-display').textContent = slider.value;
+
+slider.max = data.qmax;
+
+// If the round advanced, clear drag state (so the server may set a fresh value if it has one)
+if (data.current_round !== lastRoundSeen) {
+  isUserSliding = false;
+  lastRoundSeen = data.current_round;
+}
+
+if (!data.my_submitted) {
+  slider.disabled = false;
+  document.getElementById('player-submit-btn').disabled = false;
+
+  // Only let the server set the slider IF:
+  // 1) the server actually has a saved value for me, and
+  // 2) I am not actively dragging right now, and
+  // 3) the input isn't focused
+  if (data.my_has_act && !isUserSliding && document.activeElement !== slider) {
+    slider.value = data.my_q;
+  }
+} else {
+  slider.disabled = true;
+  document.getElementById('player-submit-btn').disabled = true;
+}
+
+document.getElementById('player-q-display').textContent = slider.value;
+
 
                 updatePlayerProfit();
                 updatePlayerList(data.players);

@@ -400,6 +400,7 @@ def api_room_state():
     
     acts = fetch_actions(code, t)
     my_act = next((a for a in acts if a["player_id"] == player_id), None)
+    has_act = my_act is not None
     
     submitted_ids = {a["player_id"] for a in acts if a["submitted"]}
     player_status = []
@@ -417,12 +418,15 @@ def api_room_state():
         "S": rr["S"],
         "Smax": params["Smax"],
         "qmax": params["qmax"],
-        "my_q": my_act["q"] if my_act else 40.0,
-        "my_submitted": bool(my_act and my_act["submitted"]) if my_act else False,
+        # key change: no default; None means “no prior choice saved”
+        "my_q": (my_act["q"] if has_act else None),
+        "my_has_act": has_act,
+        "my_submitted": bool(my_act and my_act["submitted"]) if has_act else False,
         "players": player_status,
         "my_cumulative": next((p["cumulative_profit"] for p in players if p["player_id"] == player_id), 0.0),
         "params": params
     })
+
 
 @app.route('/api/force_advance', methods=['POST'])
 def api_force_advance():
