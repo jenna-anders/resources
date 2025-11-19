@@ -400,29 +400,29 @@ def stock_gauge(S: float, Smax: float, label: str = "Aquifer stock"):
 
 
 def room_params_form(defaults: Dict) -> Dict:
-    """Host's parameter form with only essential knobs, plus capacity (4 or 5). IN EXPANDER to be less salient."""
-    with st.expander("🔧 Room parameters (optional - click to customize)", expanded=False):
-        with st.form("room_params_form"):
-            col1, col2, col3 = st.columns(3)
-            with col1:
-                S0 = st.number_input("Initial stock S0", min_value=0.0, value=float(defaults["S0"]))
-                R = st.number_input("Recharge R per round", min_value=0.0, value=float(defaults["R"]))
-                T = st.number_input("Number of rounds T", min_value=1, step=1, value=int(defaults["T"]))
-            with col2:
-                qmax = st.number_input("Max q per player", min_value=0.0, value=float(defaults["qmax"]))
-                P = st.number_input("Price P", min_value=0.0, value=float(defaults["P"]))
-                players_expected = st.selectbox("Players per room", [4, 5, 6], index=2)
-            with col3:
-                gamma = st.number_input("Diminishing returns γ", min_value=0.0, value=float(defaults["gamma"]))
-                c0 = st.number_input("Base pumping cost c0", min_value=0.0, value=float(defaults["c0"]))
-                c1 = st.number_input("Depth cost slope c1", min_value=0.0, step=0.001, format="%.3f", value=float(defaults["c1"]))
-            submitted = st.form_submit_button("Create room")
-        if submitted:
-            return {
-                "S0": float(S0), "Smax": float(S0), "R": float(R), "T": int(T), "qmax": float(qmax),
-                "P": float(P), "gamma": float(gamma), "c0": float(c0), "c1": float(c1),
-                "players_expected": int(players_expected),
-            }
+    """Host's parameter form with only essential knobs, plus capacity (4 or 5)."""
+    st.caption("💡 Tip: Default parameters work well. Customize below only if needed.")
+    with st.form("room_params_form"):
+        col1, col2, col3 = st.columns(3)
+        with col1:
+            S0 = st.number_input("Initial stock S0", min_value=0.0, value=float(defaults["S0"]))
+            R = st.number_input("Recharge R per round", min_value=0.0, value=float(defaults["R"]))
+            T = st.number_input("Number of rounds T", min_value=1, step=1, value=int(defaults["T"]))
+        with col2:
+            qmax = st.number_input("Max q per player", min_value=0.0, value=float(defaults["qmax"]))
+            P = st.number_input("Price P", min_value=0.0, value=float(defaults["P"]))
+            players_expected = st.selectbox("Players per room", [4, 5, 6], index=2)
+        with col3:
+            gamma = st.number_input("Diminishing returns γ", min_value=0.0, value=float(defaults["gamma"]))
+            c0 = st.number_input("Base pumping cost c0", min_value=0.0, value=float(defaults["c0"]))
+            c1 = st.number_input("Depth cost slope c1", min_value=0.0, step=0.001, format="%.3f", value=float(defaults["c1"]))
+        submitted = st.form_submit_button("Create room with these parameters")
+    if submitted:
+        return {
+            "S0": float(S0), "Smax": float(S0), "R": float(R), "T": int(T), "qmax": float(qmax),
+            "P": float(P), "gamma": float(gamma), "c0": float(c0), "c1": float(c1),
+            "players_expected": int(players_expected),
+        }
     return {}
 
 # ------------------------------
