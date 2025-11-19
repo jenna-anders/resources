@@ -455,6 +455,15 @@ def api_end_game():
     socketio.emit('game_ended', {}, room=code)
     return jsonify({"success": True})
 
+@app.route("/healthz")
+def healthz():
+    return "ok", 200
+
+# TEMPORARY: prove the container responds
+@app.route("/")
+def index():
+    return "OK", 200
+
 # ------------------------------
 # Socket.io events
 # ------------------------------
