@@ -461,7 +461,7 @@ def healthz():
 
 # TEMPORARY: prove the container responds
 @app.route("/ok")
-def index():
+def ok():
     return "OK", 200
 
 # ------------------------------
