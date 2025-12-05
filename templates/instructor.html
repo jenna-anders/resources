@@ -1,0 +1,179 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Instructor Guide - Groundwater Commons Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 42px;
+            margin-bottom: 30px;
+            color: #60a5fa;
+        }
+        h2 {
+            font-size: 28px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: #60a5fa;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 10px;
+        }
+        h3 {
+            font-size: 20px;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            color: #93c5fd;
+        }
+        p {
+            margin-bottom: 20px;
+            color: #cbd5e1;
+        }
+        .card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #334155;
+        }
+        .highlight {
+            background: #1e3a5f;
+            border-left: 4px solid #60a5fa;
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .nav-link {
+            display: inline-block;
+            color: #93c5fd;
+            text-decoration: none;
+            margin-top: 10px;
+            margin-right: 20px;
+            padding: 8px 16px;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            border-color: #60a5fa;
+            background: #1e293b;
+        }
+        ol {
+            margin-left: 25px;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+        }
+        li {
+            margin-bottom: 12px;
+        }
+        footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+            font-size: 14px;
+            text-align: center;
+            color: #64748b;
+        }
+        code {
+            background: #0f172a;
+            padding: 3px 8px;
+            border-radius: 4px;
+            color: #fbbf24;
+            font-family: 'Courier New', monospace;
+            font-size: 16px;
+            font-weight: 600;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 30px;">
+            <a href="/" class="nav-link">← Home</a>
+            <a href="/about" class="nav-link">About</a>
+        </div>
+
+        <h1>Instructor Guide</h1>
+
+        <h2>Group Mode Setup</h2>
+
+        <div class="card">
+            <ol>
+                <li>Navigate to <a href="/group" style="color: #60a5fa;">/group</a> and click the "Host Controls" tab</li>
+                <li>Adjust parameters if desired (defaults work well for most classes)</li>
+                <li>Click "Create Room" to generate a 5-character room code</li>
+                <li>Share the code with students</li>
+                <li>Once students have joined, click "Start Game"</li>
+            </ol>
+
+            <div class="highlight">
+                <strong>Students join at:</strong> Navigate to <a href="/group" style="color: #60a5fa;">/group</a> → "Join as Player" tab → Enter room code and name
+            </div>
+        </div>
+
+        <h2>Game Flow</h2>
+
+        <div class="card">
+            <p><strong>Each round:</strong></p>
+            <ol>
+                <li>Students choose their pumping rate (0 to qmax)</li>
+                <li>When all students submit, the round automatically advances</li>
+                <li>Results update in real-time for everyone</li>
+            </ol>
+
+            <p><strong>Host controls:</strong></p>
+            <ul style="margin-left: 25px; color: #cbd5e1;">
+                <li><strong>Force Advance:</strong> Move to next round without waiting for all submissions</li>
+                <li><strong>End Game Now:</strong> Finish immediately and display final results</li>
+            </ul>
+        </div>
+
+        <h2>Solo Mode</h2>
+
+        <div class="card">
+            <p>
+                Students can practice independently at <a href="/solo" style="color: #60a5fa;">/solo</a>.
+                They control all wells and can experiment with different extraction strategies.
+                Useful for pre-class exploration or post-class analysis.
+            </p>
+        </div>
+
+        <h2>Key Parameters</h2>
+
+        <div class="card">
+            <p><strong>Essential parameters to understand:</strong></p>
+            <ul style="margin-left: 25px; color: #cbd5e1; margin-bottom: 0;">
+                <li><code>S₀</code> (Initial Stock): Starting aquifer level</li>
+                <li><code>R</code> (Recharge): Natural replenishment per round</li>
+                <li><code>T</code> (Rounds): Game length (default: 8)</li>
+                <li><code>qmax</code> (Max Pumping): Maximum extraction per player per round</li>
+            </ul>
+        </div>
+
+        <h2>Discussion Questions</h2>
+
+        <div class="card">
+            <ul style="margin-left: 25px; color: #cbd5e1; margin-bottom: 0;">
+                <li>Did the aquifer deplete? Why or why not?</li>
+                <li>Would cooperation have increased total profits?</li>
+                <li>How did your strategy change as the stock decreased?</li>
+                <li>What policies could prevent overextraction?</li>
+            </ul>
+        </div>
+
+        <footer>
+            © 2025 Jenna Anders. All rights reserved.
+        </footer>
+    </div>
+</body>
+</html>
