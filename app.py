@@ -315,6 +315,14 @@ def maybe_advance_round(code: str):
 def index():
     return render_template('index.html')
 
+@app.route('/group')
+def group():
+    return render_template('group.html')
+
+@app.route('/about')
+def about():
+    return render_template('about.html')
+
 @app.route('/api/create_room', methods=['POST'])
 def api_create_room():
     data = request.json

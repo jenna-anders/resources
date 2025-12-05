@@ -1,0 +1,359 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>About - Groundwater Commons Game</title>
+    <script src="https://polyfill.io/v3/polyfill.min.js?features=es6"></script>
+    <script id="MathJax-script" async src="https://cdn.jsdelivr.net/npm/mathjax@3/es5/tex-mml-chtml.js"></script>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #0f172a;
+            color: #e2e8f0;
+            padding: 40px 20px;
+            line-height: 1.8;
+        }
+        .container {
+            max-width: 900px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 42px;
+            margin-bottom: 30px;
+            color: #60a5fa;
+        }
+        h2 {
+            font-size: 28px;
+            margin-top: 40px;
+            margin-bottom: 20px;
+            color: #60a5fa;
+            border-bottom: 2px solid #334155;
+            padding-bottom: 10px;
+        }
+        h3 {
+            font-size: 22px;
+            margin-top: 30px;
+            margin-bottom: 15px;
+            color: #93c5fd;
+        }
+        p {
+            margin-bottom: 20px;
+            color: #cbd5e1;
+        }
+        .card {
+            background: #1e293b;
+            border-radius: 12px;
+            padding: 24px;
+            margin-bottom: 24px;
+            border: 1px solid #334155;
+        }
+        .definition {
+            background: #1e3a5f;
+            border-left: 4px solid #60a5fa;
+            padding: 16px;
+            margin: 20px 0;
+            border-radius: 4px;
+        }
+        .definition strong {
+            color: #60a5fa;
+        }
+        .math-block {
+            background: #0f172a;
+            padding: 20px;
+            margin: 20px 0;
+            border-radius: 8px;
+            border: 1px solid #334155;
+            overflow-x: auto;
+        }
+        .nav-link {
+            display: inline-block;
+            color: #93c5fd;
+            text-decoration: none;
+            margin-top: 10px;
+            margin-right: 20px;
+            padding: 8px 16px;
+            border: 1px solid #334155;
+            border-radius: 8px;
+            transition: all 0.2s;
+        }
+        .nav-link:hover {
+            border-color: #60a5fa;
+            background: #1e293b;
+        }
+        ul {
+            margin-left: 30px;
+            margin-bottom: 20px;
+            color: #cbd5e1;
+        }
+        li {
+            margin-bottom: 10px;
+        }
+        footer {
+            margin-top: 60px;
+            padding-top: 20px;
+            border-top: 1px solid #334155;
+            font-size: 14px;
+            text-align: center;
+            color: #64748b;
+        }
+        code {
+            background: #0f172a;
+            padding: 2px 6px;
+            border-radius: 4px;
+            color: #fbbf24;
+            font-family: 'Courier New', monospace;
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div style="margin-bottom: 30px;">
+            <a href="/" class="nav-link">← Home</a>
+            <a href="/solo" class="nav-link">Solo Mode</a>
+            <a href="/group" class="nav-link">Group Mode</a>
+        </div>
+
+        <h1>The Economics of Common-Pool Resources</h1>
+
+        <p>
+            This game simulates a common-pool resource problem where multiple agents extract groundwater from a shared aquifer.
+            The game illustrates fundamental concepts in environmental economics, including externalities, dynamic resource management,
+            and the tragedy of the commons.
+        </p>
+
+        <h2>1. The Setting</h2>
+
+        <div class="card">
+            <p>
+                Consider \(n\) farmers, each operating one well, who extract groundwater from a common aquifer.
+                The aquifer has a stock level \(S_t\) at time \(t\), which evolves according to:
+            </p>
+            <div class="math-block">
+                \[S_{t+1} = \max\left\{0, S_t + R - \sum_{i=1}^{n} q_{i,t}\right\}\]
+            </div>
+            <p>where:</p>
+            <ul>
+                <li>\(S_t\) = aquifer stock at the beginning of period \(t\)</li>
+                <li>\(R\) = natural recharge rate per period (constant)</li>
+                <li>\(q_{i,t}\) = extraction by farmer \(i\) in period \(t\)</li>
+                <li>\(n\) = number of farmers</li>
+            </ul>
+        </div>
+
+        <h2>2. The Profit Function</h2>
+
+        <div class="card">
+            <p>
+                Each farmer's single-period profit depends on the price of water, extraction costs, and a congestion cost
+                from pumping. The profit function for farmer \(i\) in period \(t\) is:
+            </p>
+            <div class="math-block">
+                \[\pi_{i,t}(q_{i,t}, S_t) = P \cdot q_{i,t} - \frac{\gamma}{2} q_{i,t}^2 - c_0 \cdot q_{i,t} - c_1 (S_{\max} - S_t) q_{i,t}\]
+            </div>
+            <p>where:</p>
+            <ul>
+                <li>\(P\) = price per unit of water (revenue parameter)</li>
+                <li>\(\gamma\) = congestion parameter (captures diminishing returns to extraction)</li>
+                <li>\(c_0\) = base extraction cost per unit</li>
+                <li>\(c_1\) = depth cost coefficient</li>
+                <li>\(S_{\max}\) = maximum aquifer capacity</li>
+            </ul>
+            <p>
+                The term \(c_1 (S_{\max} - S_t) q_{i,t}\) represents the <strong>stock externality</strong>:
+                as the stock \(S_t\) decreases, pumping costs increase because water must be lifted from greater depths.
+            </p>
+        </div>
+
+        <h2>3. Types of Externalities</h2>
+
+        <div class="card">
+            <h3>Stock Externality</h3>
+            <div class="definition">
+                <strong>Definition:</strong> A stock externality occurs when one agent's extraction today reduces the resource stock
+                available in future periods, imposing costs on all users (including oneself) through higher future extraction costs.
+            </div>
+            <p>
+                In this game, when farmer \(i\) extracts \(q_{i,t}\), the aquifer stock decreases to
+                \(S_{t+1} = S_t + R - \sum_j q_{j,t}\). In the next period, everyone faces higher pumping costs because
+                \(S_{t+1} < S_t\) (assuming total extraction exceeds recharge).
+            </p>
+            <p>
+                The marginal stock externality is:
+            </p>
+            <div class="math-block">
+                \[\frac{\partial \pi_{i,t+1}}{\partial q_{j,t}} = c_1 \cdot q_{i,t+1}\]
+            </div>
+            <p>
+                This shows that an additional unit extracted by farmer \(j\) today increases farmer \(i\)'s costs tomorrow
+                by \(c_1 q_{i,t+1}\).
+            </p>
+
+            <h3>Congestion Externality</h3>
+            <div class="definition">
+                <strong>Definition:</strong> A congestion externality arises when agents' simultaneous use of a resource
+                within the same period creates interference, reducing the effectiveness or increasing the cost of each agent's use.
+            </div>
+            <p>
+                The term \(-\frac{\gamma}{2} q_{i,t}^2\) in the profit function represents within-period congestion.
+                Higher extraction \(q_{i,t}\) by farmer \(i\) results in quadratically increasing costs, capturing phenomena such as:
+            </p>
+            <ul>
+                <li>Pump interference when multiple wells operate simultaneously</li>
+                <li>Declining marginal productivity of pumping effort</li>
+                <li>Local drawdown effects around individual wells</li>
+            </ul>
+            <p>
+                While this is primarily a private cost in our formulation, in more complex models, congestion can also
+                represent strategic externalities where one farmer's extraction directly affects others' extraction costs within the same period.
+            </p>
+        </div>
+
+        <h2>4. Nash Equilibrium in the Static Game</h2>
+
+        <div class="card">
+            <p>
+                Consider a single-period game where \(n\) farmers simultaneously choose extraction levels, taking the stock \(S\) as given.
+                Each farmer \(i\) solves:
+            </p>
+            <div class="math-block">
+                \[\max_{q_i} \; \pi_i(q_i, S) = P \cdot q_i - \frac{\gamma}{2} q_i^2 - c_0 \cdot q_i - c_1 (S_{\max} - S) q_i\]
+            </div>
+            <p>
+                The first-order condition is:
+            </p>
+            <div class="math-block">
+                \[\frac{\partial \pi_i}{\partial q_i} = P - \gamma q_i - c_0 - c_1 (S_{\max} - S) = 0\]
+            </div>
+            <p>
+                Solving for \(q_i\):
+            </p>
+            <div class="math-block">
+                \[q_i^* = \frac{P - c_0 - c_1 (S_{\max} - S)}{\gamma}\]
+            </div>
+            <p>
+                Since all farmers are identical, in a symmetric Nash equilibrium, each chooses the same quantity \(q^*\).
+                The total extraction is:
+            </p>
+            <div class="math-block">
+                \[Q^* = n \cdot q^* = \frac{n[P - c_0 - c_1 (S_{\max} - S)]}{\gamma}\]
+            </div>
+            <p>
+                <strong>Key insight:</strong> Individual farmers do not internalize the stock externality. They ignore the fact that
+                their extraction today increases costs for everyone (including themselves) tomorrow. This leads to overextraction
+                relative to the socially optimal level.
+            </p>
+        </div>
+
+        <h2>5. Social Optimum vs. Nash Equilibrium</h2>
+
+        <div class="card">
+            <p>
+                A social planner maximizing total welfare across all \(n\) farmers would choose extraction levels to maximize
+                the present discounted value of aggregate profits, accounting for the dynamic evolution of the stock.
+            </p>
+            <p>
+                In a finite-horizon setting with \(T\) periods and discount factor \(\delta\), the planner solves:
+            </p>
+            <div class="math-block">
+                \[\max_{\{q_{i,t}\}} \; \sum_{t=1}^{T} \delta^{t-1} \sum_{i=1}^{n} \pi_{i,t}(q_{i,t}, S_t)\]
+            </div>
+            <p>subject to:</p>
+            <div class="math-block">
+                \[S_{t+1} = \max\{0, S_t + R - \sum_{i=1}^{n} q_{i,t}\}, \quad S_1 = S_0\]
+            </div>
+            <p>
+                The planner's first-order condition for \(q_{i,t}\) includes an additional term representing the shadow value
+                of the stock:
+            </p>
+            <div class="math-block">
+                \[P - \gamma q_{i,t} - c_0 - c_1(S_{\max} - S_t) = \lambda_t\]
+            </div>
+            <p>
+                where \(\lambda_t\) is the marginal user cost (the present value of future cost increases from reducing \(S_t\) by one unit).
+            </p>
+            <p>
+                In the Nash equilibrium, farmers set \(\lambda_t = 0\) because they do not account for future impacts.
+                This results in:
+            </p>
+            <ul>
+                <li><strong>Overextraction:</strong> \(Q^{\text{Nash}} > Q^{\text{Optimal}}\)</li>
+                <li><strong>Faster stock depletion:</strong> The aquifer depletes more rapidly under Nash behavior</li>
+                <li><strong>Lower aggregate welfare:</strong> Total profits are lower than under cooperative management</li>
+            </ul>
+        </div>
+
+        <h2>6. Comparative Statics</h2>
+
+        <div class="card">
+            <p>
+                Using the Nash equilibrium extraction level \(q^* = \frac{P - c_0 - c_1 (S_{\max} - S)}{\gamma}\),
+                we can analyze how equilibrium behavior changes with parameters:
+            </p>
+
+            <h3>Effect of Stock Level</h3>
+            <div class="math-block">
+                \[\frac{\partial q^*}{\partial S} = \frac{c_1}{\gamma} > 0\]
+            </div>
+            <p>
+                Lower stock \(\Rightarrow\) higher costs \(\Rightarrow\) lower extraction. As the aquifer depletes, it becomes
+                less profitable to pump, naturally slowing extraction (though not preventing eventual collapse if \(R < n \cdot q^*\)).
+            </p>
+
+            <h3>Effect of Number of Farmers</h3>
+            <p>
+                Total extraction \(Q^* = n \cdot q^*\) increases linearly with \(n\). More users intensify the tragedy of the commons.
+            </p>
+
+            <h3>Effect of Recharge Rate</h3>
+            <p>
+                While \(R\) doesn't directly affect \(q^*\), higher recharge sustains the stock at higher levels over time,
+                indirectly supporting higher extraction rates in equilibrium.
+            </p>
+        </div>
+
+        <h2>7. Policy Implications</h2>
+
+        <div class="card">
+            <p>
+                The gap between Nash equilibrium and social optimum suggests several policy interventions:
+            </p>
+            <ul>
+                <li><strong>Pigouvian taxes:</strong> A tax equal to the marginal external cost \(\lambda_t\) would align private and social incentives.</li>
+                <li><strong>Quotas:</strong> Limiting each farmer to \(q_i \leq \bar{q}\) where \(\bar{q} < q^*\) can prevent overextraction.</li>
+                <li><strong>Tradable permits:</strong> Allocating \(n \cdot \bar{q}\) total extraction rights and allowing trade can achieve efficiency while respecting equity concerns.</li>
+                <li><strong>Cooperative management:</strong> If farmers can credibly commit to coordinated extraction, they can achieve the social optimum.</li>
+            </ul>
+            <p>
+                This game allows students to experience firsthand why such policies are necessary: even rational, profit-maximizing
+                individuals will collectively deplete a shared resource without institutional constraints.
+            </p>
+        </div>
+
+        <h2>8. Extensions and Further Reading</h2>
+
+        <div class="card">
+            <p>
+                This model can be extended in several directions:
+            </p>
+            <ul>
+                <li><strong>Heterogeneous agents:</strong> Farmers with different cost structures or discount rates</li>
+                <li><strong>Stochastic recharge:</strong> \(R_t\) varies randomly, introducing uncertainty</li>
+                <li><strong>Strategic behavior:</strong> Repeated game dynamics with punishment strategies</li>
+                <li><strong>Spatial externalities:</strong> Location-dependent pumping costs and stock interactions</li>
+            </ul>
+            <p><strong>Recommended readings:</strong></p>
+            <ul>
+                <li>Ostrom, E. (1990). <em>Governing the Commons: The Evolution of Institutions for Collective Action</em>.</li>
+                <li>Provencher, B., & Burt, O. (1993). The externalities associated with the common property exploitation of groundwater. <em>Journal of Environmental Economics and Management</em>, 24(2), 139-158.</li>
+                <li>Esteban, E., & Albiac, J. (2011). Groundwater and ecosystems damages: Questioning the Gisser–Sánchez effect. <em>Ecological Economics</em>, 70(11), 2062-2069.</li>
+            </ul>
+        </div>
+
+        <footer>
+            © 2025 Jenna Anders. All rights reserved.
+        </footer>
+    </div>
+</body>
+</html>
