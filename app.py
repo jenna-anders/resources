@@ -323,6 +323,10 @@ def group():
 def about():
     return render_template('about.html')
 
+@app.route('/instructor')
+def instructor():
+    return render_template('instructor.html')
+
 @app.route('/api/create_room', methods=['POST'])
 def api_create_room():
     data = request.json
