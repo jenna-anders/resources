@@ -1,0 +1,196 @@
+\documentclass[11pt, letterpaper]{article}
+
+\usepackage[margin=1in]{geometry}
+\usepackage{amsmath}
+\usepackage{booktabs}
+\usepackage{array}
+\usepackage{enumitem}
+\usepackage{parskip}
+\usepackage{xcolor}
+\usepackage{mdframed}
+\usepackage{hyperref}
+\usepackage{titlesec}
+\usepackage{multicol}
+
+% Colors
+\definecolor{blue}{HTML}{1e40af}
+\definecolor{lightblue}{HTML}{dbeafe}
+\definecolor{boxblue}{HTML}{eff6ff}
+\definecolor{ruleblue}{HTML}{3b82f6}
+\definecolor{yellow}{HTML}{fef9c3}
+\definecolor{ruleyellow}{HTML}{ca8a04}
+\definecolor{textgray}{HTML}{334155}
+\definecolor{mutedgray}{HTML}{64748b}
+
+% Section formatting
+\titleformat{\section}{\large\bfseries\color{blue}}{}{0em}{}[\titlerule]
+\titleformat{\subsection}{\normalsize\bfseries\color{blue}}{}{0em}{}
+\titlespacing{\section}{0pt}{18pt}{8pt}
+\titlespacing{\subsection}{0pt}{12pt}{4pt}
+
+% Blue info box
+\newmdenv[
+  backgroundcolor=boxblue,
+  linecolor=ruleblue,
+  linewidth=3pt,
+  topline=false,
+  rightline=false,
+  bottomline=false,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  skipabove=10pt,
+  skipbelow=10pt,
+]{infobox}
+
+% Yellow warning box
+\newmdenv[
+  backgroundcolor=yellow,
+  linecolor=ruleyellow,
+  linewidth=3pt,
+  topline=false,
+  rightline=false,
+  bottomline=false,
+  innerleftmargin=10pt,
+  innerrightmargin=10pt,
+  innertopmargin=8pt,
+  innerbottommargin=8pt,
+  skipabove=10pt,
+  skipbelow=10pt,
+]{warnbox}
+
+\hypersetup{colorlinks=true, urlcolor=blue, linkcolor=blue}
+
+% Tighter list spacing
+\setlist[itemize]{noitemsep, topsep=4pt}
+\setlist[enumerate]{noitemsep, topsep=4pt}
+
+\begin{document}
+
+% Header
+{\LARGE\bfseries\color{blue} Groundwater Commons Game}\\[4pt]
+{\color{mutedgray} Student Handout \quad|\quad Environmental Economics}\\[-4pt]
+\noindent\rule{\linewidth}{1pt}
+
+\vspace{6pt}
+
+%------------------------------------------------------------------
+\section{Overview}
+
+You are a farmer who pumps groundwater to irrigate your crops. The water comes from a shared underground aquifer. You will make pumping decisions across several rounds and try to maximize your total profit --- but so will everyone else sharing your aquifer. Your choices affect the water level that \emph{everyone} faces in future rounds.
+
+\begin{infobox}
+\textbf{Big idea:} This game illustrates the \textbf{tragedy of the commons} --- a situation where individually rational decisions lead to a collectively worse outcome for a shared resource.
+\end{infobox}
+
+%------------------------------------------------------------------
+\section{How the Aquifer Works}
+
+The aquifer has a \textbf{stock level} $S$ that changes every round based on how much water everyone pumps and how much naturally recharges:
+
+\begin{infobox}
+\[
+S_{t+1} = \max\!\left\{0,\; S_t + R - \textstyle\sum_{i=1}^{n} q_{i,t}\right\}
+\]
+\vspace{-6pt}
+\begin{itemize}
+  \item $S_t$ = current water stock in the aquifer
+  \item $R$ = natural recharge per round (constant)
+  \item $q_{i,t}$ = pumping by player $i$ in round $t$; \;$n$ = number of players
+\end{itemize}
+\end{infobox}
+
+If the group pumps more than the aquifer recharges, the stock declines. If the stock reaches zero, pumping becomes very expensive and profits collapse. The game ends after 8 rounds (or when the aquifer is exhausted).
+
+%------------------------------------------------------------------
+\section{How Your Profit Is Calculated}
+
+Each round, your profit depends on how much you pump ($q$) and the current water level ($S$):
+
+\begin{infobox}
+\[
+\pi(q, S) \;=\; \underbrace{P\,q}_{\text{revenue}}
+           \;-\; \underbrace{\tfrac{\gamma}{2}\,q^2}_{\text{congestion}}
+           \;-\; \underbrace{c_0\,q}_{\text{base cost}}
+           \;-\; \underbrace{c_1\,(S_{\max}-S)\,q}_{\text{depth cost}}
+\]
+\end{infobox}
+
+\vspace{6pt}
+
+\begin{tabular}{@{}p{4.5cm} p{6.5cm} p{2.5cm}@{}}
+\toprule
+\textbf{Term} & \textbf{What it represents} & \textbf{Default} \\
+\midrule
+$P \cdot q$ & Revenue from selling your water & $P = 10$ \\[4pt]
+$\dfrac{\gamma}{2} \cdot q^2$ & Congestion cost --- pumping too much at once has diminishing returns & $\gamma = 0.08$ \\[8pt]
+$c_0 \cdot q$ & Base operating cost per unit pumped & $c_0 = 2$ \\[4pt]
+$c_1 (S_{\max}-S) q$ & Depth cost --- the lower the water table, the more expensive to pump & $c_1 = 0.006$ \\
+\bottomrule
+\end{tabular}
+
+\vspace{6pt}
+
+\begin{warnbox}
+\textbf{Key insight:} When the aquifer depletes, pumping costs rise for \emph{everyone}. This is the \textbf{stock externality} --- your pumping today imposes costs on all players (including yourself) in future rounds.
+\end{warnbox}
+
+%------------------------------------------------------------------
+\section{Game Modes}
+
+\begin{multicols}{2}
+\subsection*{Solo Mode}
+You control all 6 wells yourself. Set the same pumping rate for each well and observe how the aquifer responds over 8 rounds. Use this to explore the dynamics \emph{before} playing with your group.
+
+\textit{Try pumping at full capacity every round, then try pumping conservatively. What do you notice?}
+
+\columnbreak
+
+\subsection*{Group Mode}
+Each student controls one well in a shared aquifer. Every round you independently choose your pumping rate, and the round advances once everyone submits. The player with the highest \textbf{cumulative profit} at the end wins.
+\end{multicols}
+
+%------------------------------------------------------------------
+\section{How to Play --- Group Mode}
+
+\begin{enumerate}
+  \item Navigate to the game website and click \textbf{Group Mode}.
+  \item One person acts as \textbf{host}: click ``Host Controls,'' set the number of players, then click \textbf{Create Room}. Share the 5-character room code with your group.
+  \item All other players click ``Join as Player,'' enter the room code and your name, then click \textbf{Join Room}.
+  \item Once everyone has joined, the host clicks \textbf{Start Game}.
+  \item Each round: move the slider to set your pumping rate ($0$ to $q_{\max}$), then click \textbf{Finalize Pumping Decision}. The round advances automatically when all players have submitted.
+  \item After 8 rounds, a final leaderboard shows cumulative profits for all players.
+\end{enumerate}
+
+%------------------------------------------------------------------
+\section{Discussion Questions}
+
+\begin{itemize}
+  \item What pumping rate maximizes your profit in a \emph{single} round, ignoring future costs?
+  \item What pumping rate would be best for the \emph{group as a whole} over all 8 rounds?
+  \item Why might these two answers differ? What happens to the aquifer if everyone pumps to maximize their individual round profit?
+  \item Did your group implicitly cooperate, or did you experience overextraction? How did the aquifer stock change over time?
+  \item What real-world policies or institutions could help groups avoid the tragedy of the commons?
+\end{itemize}
+
+%------------------------------------------------------------------
+\section{Key Terms}
+
+\begin{tabular}{@{}p{3.8cm} p{10cm}@{}}
+\toprule
+\textbf{Term} & \textbf{Definition} \\
+\midrule
+Stock externality & Each unit you extract today lowers the aquifer level, raising pumping costs for everyone in every future round. \\[4pt]
+Congestion externality & Pumping a large quantity within a single round faces increasing per-unit costs (captured by the $\gamma$ term). \\[4pt]
+Nash equilibrium & The outcome where each player is choosing their best response to everyone else's choices --- often leads to overextraction here. \\[4pt]
+Social optimum & The pumping plan that maximizes total group profit across all rounds, accounting for future stock effects. \\[4pt]
+Tragedy of the commons & When individually rational behavior leads to collective overuse and degradation of a shared resource. \\
+\bottomrule
+\end{tabular}
+
+\vspace{20pt}
+\noindent\rule{\linewidth}{0.4pt}\\[3pt]
+{\small\color{mutedgray} Groundwater Commons Game \quad\textbullet\quad \textcopyright\ 2025 Jenna Anders. All rights reserved.}
+
+\end{document}

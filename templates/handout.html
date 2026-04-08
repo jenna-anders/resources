@@ -1,0 +1,274 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Student Handout - Groundwater Commons Game</title>
+    <style>
+        * { margin: 0; padding: 0; box-sizing: border-box; }
+        body {
+            font-family: -apple-system, BlinkMacSystemFont, 'Segoe UI', sans-serif;
+            background: #fff;
+            color: #1e293b;
+            padding: 40px 20px;
+            line-height: 1.8;
+            max-width: 760px;
+            margin: 0 auto;
+        }
+        h1 {
+            font-size: 28px;
+            margin-bottom: 6px;
+            color: #1e40af;
+        }
+        .subtitle {
+            font-size: 14px;
+            color: #64748b;
+            margin-bottom: 28px;
+            border-bottom: 2px solid #e2e8f0;
+            padding-bottom: 12px;
+        }
+        h2 {
+            font-size: 18px;
+            margin-top: 28px;
+            margin-bottom: 12px;
+            color: #1e40af;
+            border-bottom: 1px solid #bfdbfe;
+            padding-bottom: 6px;
+        }
+        h3 {
+            font-size: 15px;
+            margin-top: 16px;
+            margin-bottom: 8px;
+            color: #1e293b;
+            font-weight: 700;
+        }
+        p {
+            margin-bottom: 14px;
+            color: #334155;
+            font-size: 14px;
+        }
+        ul, ol {
+            margin-left: 22px;
+            margin-bottom: 14px;
+            color: #334155;
+            font-size: 14px;
+        }
+        li {
+            margin-bottom: 6px;
+        }
+        .box {
+            background: #eff6ff;
+            border-left: 4px solid #3b82f6;
+            padding: 14px 16px;
+            margin: 16px 0;
+            border-radius: 4px;
+        }
+        .box p, .box li { margin-bottom: 6px; }
+        .box strong { color: #1e40af; }
+        .warning-box {
+            background: #fef9c3;
+            border-left: 4px solid #ca8a04;
+            padding: 14px 16px;
+            margin: 16px 0;
+            border-radius: 4px;
+            font-size: 14px;
+            color: #713f12;
+        }
+        table {
+            width: 100%;
+            border-collapse: collapse;
+            margin: 16px 0;
+            font-size: 13px;
+        }
+        th {
+            background: #dbeafe;
+            color: #1e40af;
+            padding: 8px 12px;
+            text-align: left;
+            border: 1px solid #bfdbfe;
+            font-weight: 700;
+        }
+        td {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            color: #334155;
+            vertical-align: top;
+        }
+        tr:nth-child(even) td { background: #f8fafc; }
+        .step-number {
+            display: inline-block;
+            background: #3b82f6;
+            color: #fff;
+            font-weight: 700;
+            width: 24px;
+            height: 24px;
+            border-radius: 50%;
+            text-align: center;
+            line-height: 24px;
+            font-size: 13px;
+            margin-right: 8px;
+            flex-shrink: 0;
+        }
+        .step {
+            display: flex;
+            align-items: flex-start;
+            margin-bottom: 10px;
+        }
+        .step-text { flex: 1; font-size: 14px; color: #334155; }
+        .two-col {
+            display: grid;
+            grid-template-columns: 1fr 1fr;
+            gap: 16px;
+            margin: 16px 0;
+        }
+        .col-box {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 8px;
+            padding: 14px;
+        }
+        .col-box h3 { margin-top: 0; }
+        footer {
+            margin-top: 40px;
+            padding-top: 12px;
+            border-top: 1px solid #e2e8f0;
+            font-size: 12px;
+            color: #94a3b8;
+            text-align: center;
+        }
+        @media print {
+            body { padding: 20px; }
+            .no-print { display: none; }
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Groundwater Commons Game</h1>
+    <p class="subtitle">Student Handout &nbsp;|&nbsp; Environmental Economics</p>
+
+    <h2>Overview</h2>
+    <p>
+        You are a farmer who pumps groundwater to irrigate your crops. The water comes from a shared underground aquifer.
+        You will make pumping decisions across several rounds and try to maximize your total profit — but so will everyone
+        else sharing your aquifer. Your choices affect the water level that everyone faces in future rounds.
+    </p>
+
+    <div class="box">
+        <strong>Big idea:</strong> This game illustrates the <strong>tragedy of the commons</strong> — a situation where
+        individually rational decisions lead to a collectively worse outcome for a shared resource.
+    </div>
+
+    <h2>How the Aquifer Works</h2>
+    <p>
+        The aquifer has a <strong>stock level (S)</strong> that changes every round based on how much water everyone pumps
+        and how much naturally recharges:
+    </p>
+    <div class="box">
+        <strong>S<sub>next</sub> = max(0, &nbsp; S<sub>current</sub> + R &minus; total pumping)</strong><br>
+        <ul style="margin-top: 8px;">
+            <li><strong>S</strong> = current water stock in the aquifer</li>
+            <li><strong>R</strong> = natural recharge per round (constant)</li>
+            <li><strong>Total pumping</strong> = sum of all players' extractions this round</li>
+        </ul>
+    </div>
+    <p>
+        If the group pumps more than the aquifer recharges, the stock declines. If the stock reaches zero, pumping
+        becomes very expensive and profits collapse. The game ends after 8 rounds (or when the aquifer is exhausted).
+    </p>
+
+    <h2>How Your Profit Is Calculated</h2>
+    <p>
+        Each round, your profit depends on how much you pump (<strong>q</strong>) and the current water level (<strong>S</strong>):
+    </p>
+    <div class="box">
+        <strong>Profit = P&middot;q &minus; (&gamma;/2)&middot;q&sup2; &minus; c<sub>0</sub>&middot;q &minus; c<sub>1</sub>&middot;(S<sub>max</sub> &minus; S)&middot;q</strong>
+    </div>
+
+    <table>
+        <tr>
+            <th>Term</th>
+            <th>What it represents</th>
+            <th>Default value</th>
+        </tr>
+        <tr>
+            <td><strong>P &middot; q</strong></td>
+            <td>Revenue from selling your water</td>
+            <td>P = 10</td>
+        </tr>
+        <tr>
+            <td><strong>(&gamma;/2) &middot; q&sup2;</strong></td>
+            <td>Congestion cost — pumping too much at once has diminishing returns</td>
+            <td>&gamma; = 0.08</td>
+        </tr>
+        <tr>
+            <td><strong>c<sub>0</sub> &middot; q</strong></td>
+            <td>Base operating cost per unit pumped</td>
+            <td>c<sub>0</sub> = 2</td>
+        </tr>
+        <tr>
+            <td><strong>c<sub>1</sub> &middot; (S<sub>max</sub> &minus; S) &middot; q</strong></td>
+            <td>Depth cost — the lower the water table, the more expensive to pump</td>
+            <td>c<sub>1</sub> = 0.006</td>
+        </tr>
+    </table>
+
+    <div class="warning-box">
+        <strong>Key insight:</strong> When the aquifer depletes, pumping costs rise for <em>everyone</em>. This is the
+        <strong>stock externality</strong> — your pumping today imposes costs on all players (including yourself) in future rounds.
+    </div>
+
+    <h2>Game Modes</h2>
+
+    <div class="two-col">
+        <div class="col-box">
+            <h3>Solo Mode</h3>
+            <p>You control all 6 wells by yourself. Set the same pumping rate for each well and observe how the
+            aquifer responds over 8 rounds. Use this to explore the dynamics before playing with your group.</p>
+            <p><em>Good questions to explore: What happens if you pump at full capacity every round? What if you pump
+            conservatively?</em></p>
+        </div>
+        <div class="col-box">
+            <h3>Group Mode</h3>
+            <p>Each student controls one well. You all share the same aquifer. Every round you independently choose
+            your pumping rate, and the round advances once everyone submits. The player with the highest
+            <strong>cumulative profit</strong> at the end wins.</p>
+        </div>
+    </div>
+
+    <h2>How to Play — Group Mode</h2>
+
+    <div class="step"><span class="step-number">1</span><span class="step-text">Navigate to the game website and click <strong>Group Mode</strong>.</span></div>
+    <div class="step"><span class="step-number">2</span><span class="step-text">One person in your group acts as <strong>host</strong>: click "Host Controls," set the number of players, then click <strong>Create Room</strong>. Share the 5-character room code with your group.</span></div>
+    <div class="step"><span class="step-number">3</span><span class="step-text">All other players click "Join as Player," enter the room code and your name, then click <strong>Join Room</strong>.</span></div>
+    <div class="step"><span class="step-number">4</span><span class="step-text">Once everyone has joined, the host clicks <strong>Start Game</strong>.</span></div>
+    <div class="step"><span class="step-number">5</span><span class="step-text">Each round: move the slider to set your pumping rate (0 to q<sub>max</sub>), then click <strong>Finalize Pumping Decision</strong>. The round advances automatically when all players have submitted.</span></div>
+    <div class="step"><span class="step-number">6</span><span class="step-text">After 8 rounds, a final leaderboard shows cumulative profits for all players.</span></div>
+
+    <h2>What to Think About</h2>
+    <ul>
+        <li>What pumping rate maximizes your profit in a <em>single round</em>, ignoring future costs?</li>
+        <li>What pumping rate would be best for the <em>group as a whole</em> over all 8 rounds?</li>
+        <li>Why might these two answers differ? What happens to the aquifer if everyone pumps to maximize their
+        individual round profit?</li>
+        <li>Did your group implicitly cooperate, or did you experience overextraction? How did the aquifer stock
+        change over time?</li>
+        <li>What real-world policies or institutions could help groups avoid the tragedy of the commons?</li>
+    </ul>
+
+    <h2>Key Terms</h2>
+    <table>
+        <tr><th>Term</th><th>Definition</th></tr>
+        <tr><td><strong>Stock externality</strong></td><td>Each unit you extract today lowers the aquifer level, raising pumping costs for everyone in every future round.</td></tr>
+        <tr><td><strong>Congestion externality</strong></td><td>Pumping a large quantity within a single round faces increasing per-unit costs (captured by the &gamma; term).</td></tr>
+        <tr><td><strong>Nash equilibrium</strong></td><td>The outcome where each player is choosing their best response to everyone else's choices — often leads to overextraction here.</td></tr>
+        <tr><td><strong>Social optimum</strong></td><td>The pumping plan that maximizes total group profit across all rounds, accounting for future stock effects.</td></tr>
+        <tr><td><strong>Tragedy of the commons</strong></td><td>When individually rational behavior leads to collective overuse and degradation of a shared resource.</td></tr>
+    </table>
+
+    <footer>
+        Groundwater Commons Game &nbsp;&middot;&nbsp; &copy; 2025 Jenna Anders. All rights reserved.
+    </footer>
+
+</body>
+</html>
