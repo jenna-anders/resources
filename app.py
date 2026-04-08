@@ -593,11 +593,11 @@ def solo_submit():
     wells = int(p["wells"])
     total_q = wells * q
 
-    per_profit = _solo_profit_per_well(q, p["P"], p["c0"], p["c1"])
+    S_old = st["S"]
+    per_profit = profit_one_period(q, S_old, p)
     total_profit = wells * per_profit
 
     # *** This is where S changes ***
-    S_old = st["S"]
     S_new = _solo_next_S(S_old, p["R"], total_q, p["gamma"], p["Smax"])
 
     st["S"] = S_new
