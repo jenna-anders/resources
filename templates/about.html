@@ -151,18 +151,17 @@
                 from pumping. The profit function for farmer \(i\) in period \(t\) is:
             </p>
             <div class="math-block">
-                \[\pi_{i,t}(q_{i,t}, S_t) = P \cdot q_{i,t} - \frac{\gamma}{2} q_{i,t}^2 - c_0 \cdot q_{i,t} - c_1 (S_{\max} - S_t) q_{i,t}\]
+                \[\pi_{i,t}(q_{i,t}, S_t) = P \cdot q_{i,t} - \frac{\gamma}{2} q_{i,t}^2 - c (S_{\max} - S_t) q_{i,t}\]
             </div>
             <p>where:</p>
             <ul>
                 <li>\(P\) = price per unit of water (revenue parameter)</li>
                 <li>\(\gamma\) = congestion parameter (captures diminishing returns to extraction)</li>
-                <li>\(c_0\) = base extraction cost per unit</li>
-                <li>\(c_1\) = depth cost coefficient</li>
+                <li>\(c\) = depth cost coefficient</li>
                 <li>\(S_{\max}\) = maximum aquifer capacity</li>
             </ul>
             <p>
-                The term \(c_1 (S_{\max} - S_t) q_{i,t}\) represents the <strong>stock externality</strong>:
+                The term \(c (S_{\max} - S_t) q_{i,t}\) represents the <strong>stock externality</strong>:
                 as the stock \(S_t\) decreases, pumping costs increase because water must be lifted from greater depths.
             </p>
         </div>
@@ -184,11 +183,11 @@
                 The marginal stock externality is:
             </p>
             <div class="math-block">
-                \[\frac{\partial \pi_{i,t+1}}{\partial q_{j,t}} = c_1 \cdot q_{i,t+1}\]
+                \[\frac{\partial \pi_{i,t+1}}{\partial q_{j,t}} = c \cdot q_{i,t+1}\]
             </div>
             <p>
                 This shows that an additional unit extracted by farmer \(j\) today increases farmer \(i\)'s costs tomorrow
-                by \(c_1 q_{i,t+1}\).
+                by \(c \cdot q_{i,t+1}\).
             </p>
 
             <h3>Congestion Externality</h3>
@@ -219,26 +218,26 @@
                 Each farmer \(i\) solves:
             </p>
             <div class="math-block">
-                \[\max_{q_i} \; \pi_i(q_i, S) = P \cdot q_i - \frac{\gamma}{2} q_i^2 - c_0 \cdot q_i - c_1 (S_{\max} - S) q_i\]
+                \[\max_{q_i} \; \pi_i(q_i, S) = P \cdot q_i - \frac{\gamma}{2} q_i^2 - c (S_{\max} - S) q_i\]
             </div>
             <p>
                 The first-order condition is:
             </p>
             <div class="math-block">
-                \[\frac{\partial \pi_i}{\partial q_i} = P - \gamma q_i - c_0 - c_1 (S_{\max} - S) = 0\]
+                \[\frac{\partial \pi_i}{\partial q_i} = P - \gamma q_i - c (S_{\max} - S) = 0\]
             </div>
             <p>
                 Solving for \(q_i\):
             </p>
             <div class="math-block">
-                \[q_i^* = \frac{P - c_0 - c_1 (S_{\max} - S)}{\gamma}\]
+                \[q_i^* = \frac{P - c (S_{\max} - S)}{\gamma}\]
             </div>
             <p>
                 Since all farmers are identical, in a symmetric Nash equilibrium, each chooses the same quantity \(q^*\).
                 The total extraction is:
             </p>
             <div class="math-block">
-                \[Q^* = n \cdot q^* = \frac{n[P - c_0 - c_1 (S_{\max} - S)]}{\gamma}\]
+                \[Q^* = n \cdot q^* = \frac{n[P - c (S_{\max} - S)]}{\gamma}\]
             </div>
             <p>
                 <strong>Key insight:</strong> Individual farmers do not internalize the stock externality. They ignore the fact that
@@ -269,7 +268,7 @@
                 of the stock:
             </p>
             <div class="math-block">
-                \[P - \gamma q_{i,t} - c_0 - c_1(S_{\max} - S_t) = \lambda_t\]
+                \[P - \gamma q_{i,t} - c(S_{\max} - S_t) = \lambda_t\]
             </div>
             <p>
                 where \(\lambda_t\) is the marginal user cost (the present value of future cost increases from reducing \(S_t\) by one unit).
@@ -289,13 +288,13 @@
 
         <div class="card">
             <p>
-                Using the Nash equilibrium extraction level \(q^* = \frac{P - c_0 - c_1 (S_{\max} - S)}{\gamma}\),
+                Using the Nash equilibrium extraction level \(q^* = \frac{P - c (S_{\max} - S)}{\gamma}\),
                 we can analyze how equilibrium behavior changes with parameters:
             </p>
 
             <h3>Effect of Stock Level</h3>
             <div class="math-block">
-                \[\frac{\partial q^*}{\partial S} = \frac{c_1}{\gamma} > 0\]
+                \[\frac{\partial q^*}{\partial S} = \frac{c}{\gamma} > 0\]
             </div>
             <p>
                 Lower stock \(\Rightarrow\) higher costs \(\Rightarrow\) lower extraction. As the aquifer depletes, it becomes
