@@ -182,7 +182,7 @@
         Each round, your profit depends on how much you pump (<strong>q</strong>) and the current water level (<strong>S</strong>):
     </p>
     <div class="box">
-        <strong>Profit = P&middot;q &minus; (&gamma;/2)&middot;q&sup2; &minus; c<sub>0</sub>&middot;q &minus; c<sub>1</sub>&middot;(S<sub>max</sub> &minus; S)&middot;q</strong>
+        <strong>Profit = P&middot;q &minus; (&gamma;/2)&middot;q&sup2; &minus; c&middot;(S<sub>max</sub> &minus; S)&middot;q</strong>
     </div>
 
     <table>
@@ -202,14 +202,9 @@
             <td>&gamma; = 0.08</td>
         </tr>
         <tr>
-            <td><strong>c<sub>0</sub> &middot; q</strong></td>
-            <td>Base operating cost per unit pumped</td>
-            <td>c<sub>0</sub> = 2</td>
-        </tr>
-        <tr>
-            <td><strong>c<sub>1</sub> &middot; (S<sub>max</sub> &minus; S) &middot; q</strong></td>
+            <td><strong>c &middot; (S<sub>max</sub> &minus; S) &middot; q</strong></td>
             <td>Depth cost — the lower the water table, the more expensive to pump</td>
-            <td>c<sub>1</sub> = 0.006</td>
+            <td>c = 0.006</td>
         </tr>
     </table>
 

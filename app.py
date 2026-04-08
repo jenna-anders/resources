@@ -85,11 +85,10 @@ init_db()
 def profit_one_period(q: float, S: float, params: Dict) -> float:
     P = params["P"]
     gamma = params["gamma"]
-    c0 = params["c0"]
-    c1 = params["c1"]
+    c = params["c"]
     Smax = params["Smax"]
     revenue = P * q - 0.5 * gamma * q * q
-    cost = c0 * q + c1 * (Smax - S) * q
+    cost = c * (Smax - S) * q
     return revenue - cost
 
 def next_stock(S: float, R: float, q_total: float) -> float:
@@ -333,8 +332,7 @@ def api_create_room():
     params = {
         "P": data.get("P", 10.0),
         "gamma": data.get("gamma", 0.08),
-        "c0": data.get("c0", 2.0),
-        "c1": data.get("c1", 0.006),
+        "c": data.get("c", 0.006),
         "S0": data.get("S0", 1200.0),
         "Smax": data.get("Smax", 1200.0),
         "R": data.get("R", 60.0),
@@ -482,8 +480,7 @@ def _solo_defaults():
     return {
         "P": 10.0,
         "gamma": 0.08,
-        "c0": 2.0,
-        "c1": 0.006,
+        "c": 0.006,
         "S0": 1200.0,
         "Smax": 1200.0,
         "R": 60.0,
@@ -498,8 +495,8 @@ def _solo_state():
 def _solo_save(state):
     session["solo_state"] = state
 
-def _solo_profit_per_well(q, P, c0, c1):
-    return max(0.0, P*q - c0*q - c1*(q**2))
+def _solo_profit_per_well(q, P, c):
+    return max(0.0, P*q - c*(q**2))
 
 def _solo_next_S(S, R, total_q, gamma, Smax):
     # For solo mode, use the same stock transition as the group game:

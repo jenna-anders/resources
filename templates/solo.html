@@ -87,8 +87,7 @@
       <div class="grid-2">
         <div class="form-group"><label>Price (P)</label><input id="P" type="number" step="1" value="10"></div>
         <div class="form-group"><label>Gamma (γ)</label><input id="gamma" type="number" step="0.1" value="0.08"></div>
-        <div class="form-group"><label>Base Cost (c₀)</label><input id="c0" type="number" step="0.5" value="2"></div>
-        <div class="form-group"><label>Depth Cost (c₁)</label><input id="c1" type="number" step="0.001" value="0.006"></div>
+        <div class="form-group"><label>Depth Cost (c)</label><input id="c" type="number" step="0.001" value="0.006"></div>
         <div class="form-group"><label>Initial Stock (S₀)</label><input id="S0" type="number" step="10" value="1200"></div>
         <div class="form-group"><label>Max Stock (Smax)</label><input id="Smax" type="number" step="10" value="1200"></div>
         <div class="form-group"><label>Recharge (R)</label><input id="R" type="number" step="1" value="60"></div>
@@ -179,7 +178,7 @@
     $('start').onclick = async () => {
       const body = {
         P: +$('P').value, gamma: +$('gamma').value,
-        c0: +$('c0').value, c1: +$('c1').value,
+        c: +$('c').value,
         S0: +$('S0').value, Smax: +$('Smax').value,
         R: +$('R').value, qmax: +$('qmax').value,
         T: +$('T').value, wells: +$('wells').value

@@ -174,12 +174,8 @@
                             <input type="number" id="param-gamma" value="0.08" step="0.01">
                         </div>
                         <div class="form-group">
-                            <label>Base Cost (c₀)</label>
-                            <input type="number" id="param-c0" value="2" step="0.1">
-                        </div>
-                        <div class="form-group">
-                            <label>Depth Cost (c₁)</label>
-                            <input type="number" id="param-c1" value="0.006" step="0.001">
+                            <label>Depth Cost (c)</label>
+                            <input type="number" id="param-c" value="0.006" step="0.001">
                         </div>
                         <div class="form-group">
                             <label>Initial Stock (S₀)</label>
@@ -462,8 +458,7 @@ document.getElementById('player-q-display').textContent = slider.value;
             const params = {
                 P: parseFloat(document.getElementById('param-P').value),
                 gamma: parseFloat(document.getElementById('param-gamma').value),
-                c0: parseFloat(document.getElementById('param-c0').value),
-                c1: parseFloat(document.getElementById('param-c1').value),
+                c: parseFloat(document.getElementById('param-c').value),
                 S0: parseFloat(document.getElementById('param-S0').value),
                 Smax: parseFloat(document.getElementById('param-Smax').value),
                 R: parseFloat(document.getElementById('param-R').value),

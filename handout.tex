@@ -112,8 +112,7 @@ Each round, your profit depends on how much you pump ($q$) and the current water
 \[
 \pi(q, S) \;=\; \underbrace{P\,q}_{\text{revenue}}
            \;-\; \underbrace{\tfrac{\gamma}{2}\,q^2}_{\text{congestion}}
-           \;-\; \underbrace{c_0\,q}_{\text{base cost}}
-           \;-\; \underbrace{c_1\,(S_{\max}-S)\,q}_{\text{depth cost}}
+           \;-\; \underbrace{c\,(S_{\max}-S)\,q}_{\text{depth cost}}
 \]
 \end{infobox}
 
@@ -125,8 +124,7 @@ Each round, your profit depends on how much you pump ($q$) and the current water
 \midrule
 $P \cdot q$ & Revenue from selling your water & $P = 10$ \\[4pt]
 $\dfrac{\gamma}{2} \cdot q^2$ & Congestion cost --- pumping too much at once has diminishing returns & $\gamma = 0.08$ \\[8pt]
-$c_0 \cdot q$ & Base operating cost per unit pumped & $c_0 = 2$ \\[4pt]
-$c_1 (S_{\max}-S) q$ & Depth cost --- the lower the water table, the more expensive to pump & $c_1 = 0.006$ \\
+$c (S_{\max}-S) q$ & Depth cost --- the lower the water table, the more expensive to pump & $c = 0.006$ \\
 \bottomrule
 \end{tabular}
 
