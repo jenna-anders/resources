@@ -1,6 +1,6 @@
 # Fdb version 4
-["pdflatex"] 1771471678.37636 "/Users/jenna/Documents/GitHub/resources/handout.tex" "handout.pdf" "handout" 1771471678.89106 0
-  "/Users/jenna/Documents/GitHub/resources/handout.tex" 1771471230.97614 7953 88fb471bf44ff73f6a03e63311d14bed ""
+["pdflatex"] 1775683714.00813 "/Users/jenna/Documents/GitHub/resources/handout.tex" "handout.pdf" "handout" 1775683714.71087 0
+  "/Users/jenna/Documents/GitHub/resources/handout.tex" 1775683483.02346 7819 5e9719cf5a40362f9f91ca722df8d236 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/enc/dvips/cm-super/cm-super-ts1.enc" 1136849721 2900 1537cc8184ad1792082cd229ecc269f4 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/map/fontname/texfonts.map" 1577235249 3524 cb3e574dea2d1052e39280babc910dc8 ""
   "/usr/local/texlive/2025/texmf-dist/fonts/tfm/jknappen/ec/tcrm1000.tfm" 1136768653 1536 e07581a4bb3136ece9eeb4c3ffab8233 ""
@@ -97,9 +97,9 @@
   "/usr/local/texlive/2025/texmf-var/fonts/map/pdftex/updmap/pdftex.map" 1756837803 5467155 19efa205003f9ecad95fbbaa6ff24da1 ""
   "/usr/local/texlive/2025/texmf-var/web2c/pdftex/pdflatex.fmt" 1741450574 3345740 46b66fdb0378f7bf5921b5eabf1762b8 ""
   "/usr/local/texlive/2025/texmf.cnf" 1741450484 577 418a7058ec8e006d8704f60ecd22c938 ""
-  "handout.aux" 1771471678.82439 999 bdf2714db11892371db3f593a302fdf9 "pdflatex"
-  "handout.out" 1771471678.826 954 2c379e5075905c2e24131cac60aa614c "pdflatex"
-  "handout.tex" 1771471230.97614 7953 88fb471bf44ff73f6a03e63311d14bed ""
+  "handout.aux" 1775683714.6511 999 bdf2714db11892371db3f593a302fdf9 "pdflatex"
+  "handout.out" 1775683714.65206 954 2c379e5075905c2e24131cac60aa614c "pdflatex"
+  "handout.tex" 1775683483.02346 7819 5e9719cf5a40362f9f91ca722df8d236 ""
   (generated)
   "handout.aux"
   "handout.log"
