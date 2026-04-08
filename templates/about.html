@@ -147,8 +147,8 @@
 
         <div class="card">
             <p>
-                Each farmer's single-period profit depends on the price of water, extraction costs, and a congestion cost
-                from pumping. The profit function for farmer \(i\) in period \(t\) is:
+                Each farmer's single-period profit depends on the price of water and a depth-dependent extraction cost
+                that rises as the aquifer depletes. The profit function for farmer \(i\) in period \(t\) is:
             </p>
             <div class="math-block">
                 \[\pi_{i,t}(q_{i,t}, S_t) = P \cdot q_{i,t} - \frac{\gamma}{2} q_{i,t}^2 - c (S_{\max} - S_t) q_{i,t}\]
@@ -156,17 +156,170 @@
             <p>where:</p>
             <ul>
                 <li>\(P\) = price per unit of water (revenue parameter)</li>
-                <li>\(\gamma\) = congestion parameter (captures diminishing returns to extraction)</li>
+                <li>\(\gamma\) = diminishing returns parameter</li>
                 <li>\(c\) = depth cost coefficient</li>
                 <li>\(S_{\max}\) = maximum aquifer capacity</li>
             </ul>
             <p>
-                The term \(c (S_{\max} - S_t) q_{i,t}\) represents the <strong>stock externality</strong>:
+                The term \(c (S_{\max} - S_t) q_{i,t}\) represents the <strong>depth cost</strong>:
                 as the stock \(S_t\) decreases, pumping costs increase because water must be lifted from greater depths.
+                This is the source of the externality in the game.
             </p>
         </div>
 
-        <h2>3. Types of Externalities</h2>
+        <h2>3. Solving the Two-Period Game by Backward Induction</h2>
+
+        <div class="card">
+            <p>
+                To understand the optimal extraction strategy, we solve a simplified two-period version of the game (\(t = T{-}1, T\))
+                by backward induction. This captures the essential dynamic tradeoff while remaining tractable.
+            </p>
+            <p>
+                It is helpful to define the <strong>net marginal value</strong> of the first unit of water:
+            </p>
+            <div class="math-block">
+                \[m_t = P - c(S_{\max} - S_t)\]
+            </div>
+            <p>
+                When \(S_t\) is high (near \(S_{\max}\)), \(m_t\) is close to \(P\). As the stock falls, \(m_t\) decreases.
+                In terms of \(m_t\), per-well profit simplifies to:
+            </p>
+            <div class="math-block">
+                \[\pi_{i,t} = m_t \, q_{i,t} - \frac{\gamma}{2} q_{i,t}^2\]
+            </div>
+            <p>
+                The stock transition \(S_{t+1} = S_t + R - nq_t\) (in the symmetric case) implies that \(m_t\) evolves as:
+            </p>
+            <div class="math-block">
+                \[m_{t+1} = m_t + c(R - nq_t)\]
+            </div>
+            <p>
+                If total extraction exceeds recharge, \(m\) falls (depth costs rise). If extraction is below recharge, \(m\) rises.
+            </p>
+
+            <h3>Period \(T\): The Terminal Round</h3>
+            <p>
+                In the final period, there is no future to worry about. Each farmer maximizes single-period profit
+                taking the stock \(S_T\) (equivalently, \(m_T\)) as given:
+            </p>
+            <div class="math-block">
+                \[\max_{q_T} \; m_T \, q_T - \frac{\gamma}{2} q_T^2\]
+            </div>
+            <p>The first-order condition gives:</p>
+            <div class="math-block">
+                \[m_T - \gamma q_T = 0 \quad \Longrightarrow \quad q_T^* = \frac{m_T}{\gamma}\]
+            </div>
+
+            <h3>Period \(T{-}1\): Accounting for the Future</h3>
+            <p>
+                Now consider a player who controls \(k\) wells (we will set \(k = n\) for the solo game and \(k = 1\) for the group game).
+                The player maximizes the sum of period \(T{-}1\) and period \(T\) profits across their wells:
+            </p>
+            <div class="math-block">
+                \[\max_{q_{T-1}} \; k\left[m_{T-1}\, q_{T-1} - \frac{\gamma}{2} q_{T-1}^2\right] + k\left[m_T\, q_T^*(m_T) - \frac{\gamma}{2}(q_T^*)^2\right]\]
+            </div>
+            <p>
+                The critical link is that \(q_{T-1}\) affects \(m_T\) through the stock transition. With \(k\) wells each extracting \(q_{T-1}\):
+            </p>
+            <div class="math-block">
+                \[m_T = m_{T-1} + c(R - nq_{T-1})\]
+            </div>
+            <p>
+                where total extraction includes all \(n\) wells (not just the \(k\) the player controls).
+                The player's \(k\) wells contribute \(kq_{T-1}\) to this total.
+            </p>
+            <p>
+                Define the optimized period-\(T\) per-well profit as \(\Pi_T^*(m_T) = m_T q_T^* - \frac{\gamma}{2}(q_T^*)^2\).
+                Since \(k\) factors out, the first-order condition with respect to \(q_{T-1}\) is:
+            </p>
+            <div class="math-block">
+                \[m_{T-1} - \gamma q_{T-1} + \frac{d\Pi_T^*}{dm_T} \cdot \frac{\partial m_T}{\partial q_{T-1}} = 0\]
+            </div>
+            <p>
+                We evaluate each factor in turn. First, from the stock transition, the player's per-well extraction affects \(m_T\)
+                through their \(k\) wells:
+            </p>
+            <div class="math-block">
+                \[\frac{\partial m_T}{\partial q_{T-1}} = -kc\]
+            </div>
+            <p>
+                Second, we need the derivative of optimized period-\(T\) profit with respect to \(m_T\).
+                Expanding with the product rule:
+            </p>
+            <div class="math-block">
+                \[\frac{d\Pi_T^*}{dm_T} = q_T^* + (m_T - \gamma q_T^*)\frac{dq_T^*}{dm_T}\]
+            </div>
+            <p>
+                By the <strong>envelope theorem</strong>, the period-\(T\) first-order condition tells us \(m_T - \gamma q_T^* = 0\),
+                so the second term vanishes:
+            </p>
+            <div class="math-block">
+                \[\frac{d\Pi_T^*}{dm_T} = q_T^*\]
+            </div>
+            <p>
+                Combining:
+            </p>
+            <div class="math-block">
+                \[m_{T-1} - \gamma q_{T-1} + q_T^* \cdot (-kc) = 0\]
+            </div>
+            <div class="math-block">
+                \[q_{T-1}^* = \frac{m_{T-1}}{\gamma} - \frac{kc}{\gamma}\, q_T^*\]
+            </div>
+            <p>
+                This says: extract at the myopic (single-period) rate \(m_{T-1}/\gamma\), minus a correction term
+                \(\frac{kc}{\gamma}\, q_T^*\) that accounts for the future cost of lowering the stock across
+                the \(k\) wells the player controls.
+            </p>
+        </div>
+
+        <h2>4. Solo Game vs. Group Game</h2>
+
+        <div class="card">
+            <h3>Solo Game (\(k = n\))</h3>
+            <p>
+                In solo mode, the player controls all \(n\) wells. Setting \(k = n\):
+            </p>
+            <div class="math-block">
+                \[q_{T-1}^{\text{solo}} = \frac{m_{T-1}}{\gamma} - \frac{nc}{\gamma}\, q_T^*\]
+            </div>
+            <p>
+                The correction term is \(\frac{nc}{\gamma}\, q_T^*\). It is large because the player internalizes the full
+                social cost: each unit of per-well extraction lowers \(S\) by \(n\) (applied across all \(n\) wells),
+                and the resulting cost increase hits all \(n\) of the player's own wells.
+            </p>
+
+            <h3>Group Game (\(k = 1\))</h3>
+            <p>
+                In the group game, each farmer controls a single well. Setting \(k = 1\):
+            </p>
+            <div class="math-block">
+                \[q_{T-1}^{\text{Nash}} = \frac{m_{T-1}}{\gamma} - \frac{c}{\gamma}\, q_T^*\]
+            </div>
+            <p>
+                The correction term is only \(\frac{c}{\gamma}\, q_T^*\). The Nash farmer accounts for the effect of
+                their extraction on their own single well's future costs, but ignores the cost imposed on the other \(n - 1\) farmers.
+            </p>
+
+            <h3>The Wedge</h3>
+            <div class="definition">
+                <strong>Key result:</strong> Comparing the two:
+                <div class="math-block" style="margin-top:12px; margin-bottom:4px;">
+                    \[q_{T-1}^{\text{Nash}} - q_{T-1}^{\text{solo}} = \frac{(n-1)\,c}{\gamma}\, q_T^*\]
+                </div>
+                The Nash farmer extracts more than the solo player by exactly \(\frac{(n-1)\,c}{\gamma}\, q_T^*\) per well.
+                This is the <strong>uninternalized externality</strong> — the future cost each farmer imposes on the other
+                \(n - 1\) farmers by lowering the stock. Because the Nash farmer ignores this, they overextract relative to the
+                social optimum.
+            </div>
+            <p>
+                Equivalently, you can view this from the conservation side: if a Nash farmer restrains their extraction by one unit,
+                \(S_T\) rises by one unit, but the benefit of that higher stock is shared across all \(n\) farmers. The farmer
+                bears the full cost of restraint but captures only \(1/n\) of the benefit. Conservation is a bad investment
+                when others free-ride on it — so everyone overextracts.
+            </p>
+        </div>
+
+        <h2>5. Types of Externalities</h2>
 
         <div class="card">
             <h3>Stock Externality</h3>
@@ -175,7 +328,7 @@
                 available in future periods, imposing costs on all users (including oneself) through higher future extraction costs.
             </div>
             <p>
-                In this game, when farmer \(i\) extracts \(q_{i,t}\), the aquifer stock decreases to
+                This is the externality at the heart of the game. When farmer \(i\) extracts \(q_{i,t}\), the aquifer stock decreases to
                 \(S_{t+1} = S_t + R - \sum_j q_{j,t}\). In the next period, everyone faces higher pumping costs because
                 \(S_{t+1} < S_t\) (assuming total extraction exceeds recharge).
             </p>
@@ -196,68 +349,38 @@
                 within the same period creates interference, reducing the effectiveness or increasing the cost of each agent's use.
             </div>
             <p>
-                The term \(-\frac{\gamma}{2} q_{i,t}^2\) in the profit function represents within-period congestion.
-                Higher extraction \(q_{i,t}\) by farmer \(i\) results in quadratically increasing costs, capturing phenomena such as:
+                Our model does <strong>not</strong> include a congestion externality. The \(-\frac{\gamma}{2} q_{i,t}^2\) term
+                in the profit function depends only on farmer \(i\)'s own extraction — it is a private cost reflecting
+                diminishing returns to pumping effort at an individual well, not interference between farmers.
             </p>
-            <ul>
-                <li>Pump interference when multiple wells operate simultaneously</li>
-                <li>Declining marginal productivity of pumping effort</li>
-                <li>Local drawdown effects around individual wells</li>
-            </ul>
             <p>
-                While this is primarily a private cost in our formulation, in more complex models, congestion can also
-                represent strategic externalities where one farmer's extraction directly affects others' extraction costs within the same period.
+                To incorporate a true congestion externality, we would need extraction costs that depend on
+                <em>aggregate</em> extraction within a period. For example, we could replace the private quadratic cost with
+                a term like:
+            </p>
+            <div class="math-block">
+                \[-\frac{\gamma}{2} \left(\sum_{j=1}^{n} q_{j,t}\right) q_{i,t}\]
+            </div>
+            <p>
+                Under this formulation, farmer \(i\)'s cost would increase when other farmers pump more in the same period,
+                capturing phenomena such as pump interference or local drawdown effects when multiple wells operate simultaneously.
+                This would create a within-period strategic interaction on top of the across-period stock externality.
+                The game focuses on the stock externality alone to isolate its effects clearly.
             </p>
         </div>
 
-        <h2>4. Nash Equilibrium in the Static Game</h2>
-
-        <div class="card">
-            <p>
-                Consider a single-period game where \(n\) farmers simultaneously choose extraction levels, taking the stock \(S\) as given.
-                Each farmer \(i\) solves:
-            </p>
-            <div class="math-block">
-                \[\max_{q_i} \; \pi_i(q_i, S) = P \cdot q_i - \frac{\gamma}{2} q_i^2 - c (S_{\max} - S) q_i\]
-            </div>
-            <p>
-                The first-order condition is:
-            </p>
-            <div class="math-block">
-                \[\frac{\partial \pi_i}{\partial q_i} = P - \gamma q_i - c (S_{\max} - S) = 0\]
-            </div>
-            <p>
-                Solving for \(q_i\):
-            </p>
-            <div class="math-block">
-                \[q_i^* = \frac{P - c (S_{\max} - S)}{\gamma}\]
-            </div>
-            <p>
-                Since all farmers are identical, in a symmetric Nash equilibrium, each chooses the same quantity \(q^*\).
-                The total extraction is:
-            </p>
-            <div class="math-block">
-                \[Q^* = n \cdot q^* = \frac{n[P - c (S_{\max} - S)]}{\gamma}\]
-            </div>
-            <p>
-                <strong>Key insight:</strong> Individual farmers do not internalize the stock externality. They ignore the fact that
-                their extraction today increases costs for everyone (including themselves) tomorrow. This leads to overextraction
-                relative to the socially optimal level.
-            </p>
-        </div>
-
-        <h2>5. Social Optimum vs. Nash Equilibrium</h2>
+        <h2>6. Social Optimum vs. Nash Equilibrium</h2>
 
         <div class="card">
             <p>
                 A social planner maximizing total welfare across all \(n\) farmers would choose extraction levels to maximize
-                the present discounted value of aggregate profits, accounting for the dynamic evolution of the stock.
+                the sum of aggregate profits, accounting for the dynamic evolution of the stock.
             </p>
             <p>
-                In a finite-horizon setting with \(T\) periods and discount factor \(\delta\), the planner solves:
+                In a finite-horizon setting with \(T\) periods, the planner solves:
             </p>
             <div class="math-block">
-                \[\max_{\{q_{i,t}\}} \; \sum_{t=1}^{T} \delta^{t-1} \sum_{i=1}^{n} \pi_{i,t}(q_{i,t}, S_t)\]
+                \[\max_{\{q_{i,t}\}} \; \sum_{t=1}^{T} \sum_{i=1}^{n} \pi_{i,t}(q_{i,t}, S_t)\]
             </div>
             <p>subject to:</p>
             <div class="math-block">
@@ -274,7 +397,8 @@
                 where \(\lambda_t\) is the marginal user cost (the present value of future cost increases from reducing \(S_t\) by one unit).
             </p>
             <p>
-                In the Nash equilibrium, farmers set \(\lambda_t = 0\) because they do not account for future impacts.
+                In the Nash equilibrium, farmers set \(\lambda_t \approx 0\) because they internalize only a small fraction
+                (\(1/n^2\)) of the true social cost of their extraction.
                 This results in:
             </p>
             <ul>
@@ -284,11 +408,11 @@
             </ul>
         </div>
 
-        <h2>6. Comparative Statics</h2>
+        <h2>7. Comparative Statics</h2>
 
         <div class="card">
             <p>
-                Using the Nash equilibrium extraction level \(q^* = \frac{P - c (S_{\max} - S)}{\gamma}\),
+                Using the myopic Nash equilibrium extraction level \(q^* = \frac{P - c (S_{\max} - S)}{\gamma} = \frac{m}{\gamma}\),
                 we can analyze how equilibrium behavior changes with parameters:
             </p>
 
@@ -313,7 +437,7 @@
             </p>
         </div>
 
-        <h2>7. Credits</h2>
+        <h2>8. Credits</h2>
 
         <div class="card">
             <p>
